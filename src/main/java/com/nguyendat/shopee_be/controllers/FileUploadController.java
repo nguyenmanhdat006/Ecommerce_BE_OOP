@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/files")
+@RequestMapping("/api/uploads")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 @Tag(name = "File Upload", description = "File upload and management APIs")

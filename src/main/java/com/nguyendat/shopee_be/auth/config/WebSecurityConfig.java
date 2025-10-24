@@ -41,7 +41,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/products","/api/category").permitAll()
                         .requestMatchers("/oauth2/success").permitAll()
-                        .requestMatchers("/api/files/**", "/files/**").permitAll()
+                        .requestMatchers("/api/upload/**", "/uploads/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/oauth2/authorization/google")
