@@ -29,7 +29,9 @@ public class WebSecurityConfig {
     private JWTTokenHelper jwtTokenHelper;
 
     private static final String[] publicApis= {
-            "/api/auth/**"
+            "/api/auth/**",
+            "/api/files/**",
+            "/files/**"
     };
 
     @Bean
@@ -39,6 +41,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/products","/api/category").permitAll()
                         .requestMatchers("/oauth2/success").permitAll()
+                        .requestMatchers("/api/files/**", "/files/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/oauth2/authorization/google")
