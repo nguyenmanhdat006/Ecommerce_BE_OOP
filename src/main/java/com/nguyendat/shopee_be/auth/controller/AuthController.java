@@ -1,12 +1,7 @@
 package com.nguyendat.shopee_be.auth.controller;
 
-import com.nguyendat.shopee_be.auth.config.JWTTokenHelper;
-import com.nguyendat.shopee_be.auth.dto.LoginRequest;
-import com.nguyendat.shopee_be.auth.dto.RegistrationRequest;
-import com.nguyendat.shopee_be.auth.dto.RegistrationResponse;
-import com.nguyendat.shopee_be.auth.dto.UserToken;
-import com.nguyendat.shopee_be.auth.entities.User;
-import com.nguyendat.shopee_be.auth.services.RegistrationService;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +15,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
+import com.nguyendat.shopee_be.auth.config.JWTTokenHelper;
+import com.nguyendat.shopee_be.auth.dto.LoginRequest;
+import com.nguyendat.shopee_be.auth.dto.RegistrationRequest;
+import com.nguyendat.shopee_be.auth.dto.RegistrationResponse;
+import com.nguyendat.shopee_be.auth.dto.UserToken;
+import com.nguyendat.shopee_be.auth.entities.User;
+import com.nguyendat.shopee_be.auth.services.RegistrationService;
+
 
 @RestController
 @RequestMapping("/api/auth")
