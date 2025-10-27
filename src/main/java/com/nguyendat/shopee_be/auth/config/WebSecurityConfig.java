@@ -17,7 +17,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig {
@@ -28,7 +27,7 @@ public class WebSecurityConfig {
     @Autowired
     private JWTTokenHelper jwtTokenHelper;
 
-    private static final String[] publicApis= {
+    private static final String[] publicApis = {
             "/api/auth/**",
             "/api/files/**",
             "/files/**"
@@ -36,14 +35,16 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests((authorize)-> authorize
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/products","/api/category").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products", "/api/category").permitAll()
                         .requestMatchers("/oauth2/success").permitAll()
                         .requestMatchers("/api/upload/**", "/uploads/**").permitAll()
                         .anyRequest().authenticated())
-                .oauth2Login(oauth2 -> oauth2
+                        .oauth2Login(oauth2 -> oauth2
                         .loginPage("/oauth2/authorization/google")
                         .successHandler((request, response, authentication) -> {
                             // Sinh JWT token cho user
@@ -51,30 +52,47 @@ public class WebSecurityConfig {
 
                             // Redirect về React app kèm token
                             response.sendRedirect("http://localhost:5173/v1/oauth2/callback?token=" + token);
-                        })
-                )                //.exceptionHandling((exception)-> exception.authenticationEntryPoint(new RESTAuthenticationEntryPoint()))
-                .addFilterBefore(new JWTAuthenticationFilter(jwtTokenHelper,userDetailsService), UsernamePasswordAuthenticationFilter.class);
+                        })) // .exceptionHandling((exception)-> exception.authenticationEntryPoint(new
+                            // RESTAuthenticationEntryPoint()))
+                .addFilterBefore(new JWTAuthenticationFilter(jwtTokenHelper, userDetailsService),
+                        UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
-    //bỏ qua không cần để req auth đi qua security chain
+
+    // bỏ qua không cần để req auth đi qua security chain
     @Bean
-    public WebSecurityCustomizer webSecurityCustomizer(){
+    public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring().requestMatchers(publicApis);
     }
 
-
     @Bean
-    public AuthenticationManager authenticationManager(){
-        DaoAuthenticationProvider daoAuthenticationProvider= new DaoAuthenticationProvider();
+    public AuthenticationManager authenticationManager() {
+        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
         daoAuthenticationProvider.setUserDetailsService(userDetailsService);
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
 
         return new ProviderManager(daoAuthenticationProvider);
 
     }
-    //PasswordEncoder là interface do Spring Security cung cấp, định nghĩa các phương thức dùng để mã hóa và kiểm tra mật khẩu:
+
+    // PasswordEncoder là interface do Spring Security cung cấp, định nghĩa các
+    // phương thức dùng để mã hóa và kiểm tra mật khẩu:
     @Bean
-    public PasswordEncoder passwordEncoder(){
-        return PasswordEncoderFactories.createDelegatingPasswordEncoder(); //Tạo bộ mã hóa đa năng, mặc định là BCrypt
+    public PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder(); // Tạo bộ mã hóa đa năng, mặc định là BCrypt
+    }
+
+    @Bean
+    public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
+        var cors = new org.springframework.web.cors.CorsConfiguration();
+        cors.addAllowedOrigin("http://localhost:5173"); // FE domain
+        cors.addAllowedOrigin("http://localhost:3000");
+        cors.addAllowedHeader("*");
+        cors.addAllowedMethod("*");
+        cors.setAllowCredentials(true); // nếu FE dùng cookies, credentials
+
+        var source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cors);
+        return source;
     }
 }
