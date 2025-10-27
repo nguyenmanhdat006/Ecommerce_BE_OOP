@@ -9,16 +9,22 @@ import com.nguyendat.shopee_be.repositories.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class CategoryService {
 
+
+    private static final Logger logger = LoggerFactory.getLogger(CategoryService.class);
     @Autowired
     private CategoryRepository categoryRepository;
 
     public Category getCategory(UUID categoryId){
+
+        logger.info("CategoryService getCategory: categoryId={}", categoryId);
         Optional<Category> category = categoryRepository.findById(categoryId);
         return category.orElse(null);
     }
