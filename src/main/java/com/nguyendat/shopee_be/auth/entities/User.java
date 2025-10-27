@@ -51,9 +51,7 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @ToString.Exclude
     private List<Address> addressList;
-    
-    // ========== NEW RELATIONSHIPS ==========
-    
+        
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
     @ToString.Exclude
     private List<Order> orders;
@@ -69,9 +67,7 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "changedBy", cascade = CascadeType.ALL)
     @ToString.Exclude
     private List<ProductStatus> productStatusChanges;
-    
-    // ========== METHODS ==========
-    
+        
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
