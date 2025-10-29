@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ServerErrorException;
+import org.springframework.beans.factory.annotation.Value;
 import org.apache.coyote.BadRequestException;
 
 import java.io.IOException;
@@ -252,19 +253,34 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
+    @Value("${env:development}") // default là development nếu không có config
+    private String env;
+    
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex, HttpServletRequest request) {
-        logger.error("Unexpected error occurred: {}", ex.getMessage(), ex);
-        
+    
+        // Log full stack trace trong dev, log ngắn trong prod
+        if ("development".equalsIgnoreCase(env)) {
+            logger.error("Unexpected error occurred", ex); // full stack trace
+        } else {
+            logger.error("Unexpected error: {}", ex.getMessage()); // prod chỉ log message
+        }
+    
+        String message = "An unexpected error occurred. Please try again later.";
+        // Trong dev thì có thể gửi luôn message chi tiết
+        if ("development".equalsIgnoreCase(env)) {
+            message = ex.getMessage();
+        }
+    
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error("Internal Server Error")
-                .message("An unexpected error occurred. Please try again later.")
+                .message(message)
                 .path(request.getRequestURI())
                 .build();
-        
+    
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }
