@@ -22,7 +22,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/uploads")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @Tag(name = "File Upload", description = "File upload and management APIs")
 public class FileUploadController {
     private static final Logger logger = LoggerFactory.getLogger(FileUploadController.class);
