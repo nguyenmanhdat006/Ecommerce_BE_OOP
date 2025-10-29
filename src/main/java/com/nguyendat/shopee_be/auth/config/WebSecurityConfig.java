@@ -44,16 +44,20 @@ public class WebSecurityConfig {
                         .requestMatchers("/oauth2/success").permitAll()
                         .requestMatchers("/api/upload/**", "/uploads/**").permitAll()
                         .anyRequest().authenticated())
-                        .oauth2Login(oauth2 -> oauth2
+                .oauth2Login(oauth2 -> oauth2
                         .loginPage("/oauth2/authorization/google")
-                        .successHandler((request, response, authentication) -> {
-                            // Sinh JWT token cho user
-                            String token = jwtTokenHelper.generateToken(authentication.getName());
+                        .defaultSuccessUrl("/oauth2/success", false)
+                        )
+                // .successHandler((request, response, authentication) -> {
+                // // Sinh JWT token cho user
+                // String token = jwtTokenHelper.generateToken(authentication.getName());
 
-                            // Redirect về React app kèm token
-                            response.sendRedirect("http://localhost:5173/v1/oauth2/callback?token=" + token);
-                        })) // .exceptionHandling((exception)-> exception.authenticationEntryPoint(new
-                            // RESTAuthenticationEntryPoint()))
+                // // Redirect về React app kèm token
+                // response.sendRedirect("http://localhost:5173/v1/oauth2/callback?token=" +
+                // token);
+                // })) // .exceptionHandling((exception)->
+                // exception.authenticationEntryPoint(new
+                // RESTAuthenticationEntryPoint()))
                 .addFilterBefore(new JWTAuthenticationFilter(jwtTokenHelper, userDetailsService),
                         UsernamePasswordAuthenticationFilter.class);
         return http.build();
