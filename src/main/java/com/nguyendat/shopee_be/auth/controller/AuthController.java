@@ -17,12 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nguyendat.shopee_be.auth.config.JWTTokenHelper;
 import com.nguyendat.shopee_be.auth.dto.LoginRequest;
+import com.nguyendat.shopee_be.auth.dto.UserDto;
+import com.nguyendat.shopee_be.auth.dto.LoginResponse;
 import com.nguyendat.shopee_be.auth.dto.RegistrationRequest;
 import com.nguyendat.shopee_be.auth.dto.RegistrationResponse;
-import com.nguyendat.shopee_be.auth.dto.UserToken;
 import com.nguyendat.shopee_be.auth.entities.User;
 import com.nguyendat.shopee_be.auth.services.RegistrationService;
-
 
 @RestController
 @RequestMapping("/api/auth")
@@ -41,9 +41,10 @@ public class AuthController {
     JWTTokenHelper jwtTokenHelper;
 
     @PostMapping("/login")
-    public ResponseEntity<UserToken> login(@RequestBody LoginRequest loginRequest ) {
-        try{
-            Authentication authentication = UsernamePasswordAuthenticationToken.unauthenticated(loginRequest.getUserName(), loginRequest.getPassword());
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
+        try {
+            Authentication authentication = UsernamePasswordAuthenticationToken
+                    .unauthenticated(loginRequest.getUserName(), loginRequest.getPassword());
             Authentication authenticationResponse = this.authenticationManager.authenticate(authentication);
 
             if (authenticationResponse.isAuthenticated()) {
@@ -51,36 +52,46 @@ public class AuthController {
                 if (!user.isEnabled()) {
                     return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
                 }
-                //generate jwt token
+                // generate jwt token
                 String token = jwtTokenHelper.generateToken(user.getEmail());
-                UserToken userToken = UserToken.builder().token(token).build();
-                return new ResponseEntity<>(userToken, HttpStatus.OK);
+
+                UserDto userDto = UserDto.builder()
+                        .id(user.getId())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .email(user.getEmail())
+                        .phoneNumber(user.getPhoneNumber())
+                        .enabled(user.isEnabled())
+                        .build();
+                LoginResponse loginResponse = LoginResponse.builder()
+                        .token(token)
+                        .user(userDto)
+                        .build();
+
+                return new ResponseEntity<LoginResponse>(loginResponse, HttpStatus.OK);
             }
 
-
-        }
-        catch (BadCredentialsException e){
+        } catch (BadCredentialsException e) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
 
-
     @PostMapping("/register")
-    public ResponseEntity<RegistrationResponse> register(@RequestBody RegistrationRequest request){
+    public ResponseEntity<RegistrationResponse> register(@RequestBody RegistrationRequest request) {
         RegistrationResponse registrationResponse = registrationService.createUser(request);
 
-        return new ResponseEntity<>(registrationResponse, registrationResponse.getCode() == 200 ? HttpStatus.OK: HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(registrationResponse,
+                registrationResponse.getCode() == 200 ? HttpStatus.OK : HttpStatus.BAD_REQUEST);
     }
 
-
     @PostMapping("/verify")
-    public ResponseEntity<?> verifyCode(@RequestBody Map<String,String> map){
-        String userName = map.get("userName"); //map : lưu trữ dữ liệu dưới dạng key-value
+    public ResponseEntity<?> verifyCode(@RequestBody Map<String, String> map) {
+        String userName = map.get("userName"); // map : lưu trữ dữ liệu dưới dạng key-value
         String code = map.get("code"); // phương thức map.get : lấy value của key đó
 
-        User user= (User) userDetailsService.loadUserByUsername(userName);
-        if(null != user && user.getVerificationCode().equals(code)){
+        User user = (User) userDetailsService.loadUserByUsername(userName);
+        if (null != user && user.getVerificationCode().equals(code)) {
             registrationService.verifyUser(userName);
             return new ResponseEntity<>(HttpStatus.OK);
         }
