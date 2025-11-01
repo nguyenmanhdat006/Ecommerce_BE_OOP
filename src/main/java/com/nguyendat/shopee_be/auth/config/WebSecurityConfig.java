@@ -17,6 +17,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nguyendat.shopee_be.exceptions.ErrorResponse;
+
+import jakarta.servlet.http.HttpServletResponse;
+import java.time.LocalDateTime;
+import org.springframework.http.HttpStatus;
+
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig {
@@ -44,16 +51,39 @@ public class WebSecurityConfig {
                         .requestMatchers("/oauth2/success").permitAll()
                         .requestMatchers("/api/upload/**", "/uploads/**").permitAll()
                         .anyRequest().authenticated())
-                        .oauth2Login(oauth2 -> oauth2
-                        .loginPage("/oauth2/authorization/google")
-                        .successHandler((request, response, authentication) -> {
-                            // Sinh JWT token cho user
-                            String token = jwtTokenHelper.generateToken(authentication.getName());
+                .oauth2Login(oauth2 -> oauth2
+                        // .loginPage("/oauth2/authorization/google")
+                        .defaultSuccessUrl("/oauth2/success", false))
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.setCharacterEncoding("UTF-8");
 
-                            // Redirect về React app kèm token
-                            response.sendRedirect("http://localhost:5173/v1/oauth2/callback?token=" + token);
-                        })) // .exceptionHandling((exception)-> exception.authenticationEntryPoint(new
-                            // RESTAuthenticationEntryPoint()))
+                            ErrorResponse errorResponse = ErrorResponse.builder()
+                                    .timestamp(LocalDateTime.now())
+                                    .status(HttpStatus.UNAUTHORIZED.value())
+                                    .error("Unauthorized")
+                                    .message("You are not authorized to access this resource")
+                                    .path(request.getRequestURI())
+                                    .build();
+
+                            // Chuyển ErrorResponse thành JSON string
+                            String json = new ObjectMapper().writeValueAsString(errorResponse);
+
+                            response.getWriter().write(json);
+                            response.getWriter().flush();
+                        }))
+                // .successHandler((request, response, authentication) -> {
+                // // Sinh JWT token cho user
+                // String token = jwtTokenHelper.generateToken(authentication.getName());
+
+                // // Redirect về React app kèm token
+                // response.sendRedirect("http://localhost:5173/v1/oauth2/callback?token=" +
+                // token);
+                // })) // .exceptionHandling((exception)->
+                // exception.authenticationEntryPoint(new
+                // RESTAuthenticationEntryPoint()))
                 .addFilterBefore(new JWTAuthenticationFilter(jwtTokenHelper, userDetailsService),
                         UsernamePasswordAuthenticationFilter.class);
         return http.build();
