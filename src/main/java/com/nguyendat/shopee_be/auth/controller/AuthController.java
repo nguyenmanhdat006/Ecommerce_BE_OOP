@@ -62,6 +62,7 @@ public class AuthController {
                         .email(user.getEmail())
                         .phoneNumber(user.getPhoneNumber())
                         .enabled(user.isEnabled())
+                        .avatar(user.getAvatar())
                         .build();
                 LoginResponse loginResponse = LoginResponse.builder()
                         .token(token)
