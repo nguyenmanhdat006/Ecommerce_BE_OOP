@@ -34,9 +34,7 @@ public class ProductVariant {
     @JoinColumn(name = "product_id", nullable = false)
     @JsonIgnore
     private Product product;
-    
-    // ========== NEW RELATIONSHIPS ==========
-    
+        
     @OneToMany(mappedBy = "productVariant", cascade = CascadeType.ALL)
     private List<OrderItem> orderItems;
     

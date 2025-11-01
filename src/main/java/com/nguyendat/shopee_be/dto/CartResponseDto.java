@@ -13,12 +13,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CartDto {
+public class CartResponseDto {
     private UUID id;
+    private ProductDto product;
     private Integer quantity;
     private Date createdAt;
     private Date updatedAt;
     private UUID userId;
-    private UUID productId;
-    private UUID productVariantId;
 }
