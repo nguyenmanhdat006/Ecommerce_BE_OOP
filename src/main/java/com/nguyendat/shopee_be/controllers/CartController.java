@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import com.nguyendat.shopee_be.dto.CartResponseDto;
 
 @RestController
 @RequestMapping("/api/carts")
@@ -22,8 +23,8 @@ public class CartController {
 
 
     @GetMapping
-    public ResponseEntity<List<CartDto>> getAll() {
-        List<com.nguyendat.shopee_be.dto.CartDto> dtos = cartService.findAll();
+    public ResponseEntity<List<CartResponseDto>> getAll() {
+        List<CartResponseDto> dtos = cartService.findAll();
         return new ResponseEntity<>(dtos, HttpStatus.OK);
     }
 

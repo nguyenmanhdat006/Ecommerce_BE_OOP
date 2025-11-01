@@ -7,6 +7,8 @@ import com.nguyendat.shopee_be.mapper.CartMapper;
 import com.nguyendat.shopee_be.repositories.CartRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import com.nguyendat.shopee_be.dto.CartResponseDto;
+import com.nguyendat.shopee_be.dto.ProductDto;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,9 +25,29 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public List<CartDto> findAll() {
-        return repository.findAll().stream().map(cartMapper::toDto).collect(Collectors.toList());
+    public List<CartResponseDto> findAll() {
+        return repository.findAll()
+                .stream()
+                .map(cart -> {
+                    ProductDto productDto = ProductDto.builder()
+                            .id(cart.getProduct().getId())
+                            .name(cart.getProduct().getName())
+                            .price(cart.getProduct().getPrice())
+                            .thumbnail(cart.getProduct().getResources().isEmpty() ? null : cart.getProduct().getResources().get(0).getUrl())
+                            .build();
+
+                    return CartResponseDto.builder()
+                            .id(cart.getId())
+                            .product(productDto)
+                            .quantity(cart.getQuantity())       
+                            .createdAt(cart.getCreatedAt())
+                            .updatedAt(cart.getUpdatedAt())
+                            .userId(cart.getUser().getId())
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
+
 
     @Override
     public CartDto findById(UUID id) {
