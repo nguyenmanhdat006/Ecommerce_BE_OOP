@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -13,4 +15,6 @@ public class CategoryTypeRequest {
     private String name;
     private String code;
     private String description;
+    private UUID categoryId;
+
 }
