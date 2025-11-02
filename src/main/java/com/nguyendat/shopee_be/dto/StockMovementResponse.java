@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.nguyendat.shopee_be.dto.ProductDto;
 
 import java.util.Date;
 import java.util.UUID;
@@ -13,12 +12,16 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CartDto {
+public class StockMovementResponse {
     private UUID id;
+    private String movementType;
     private Integer quantity;
-    private Date createdAt;
-    private Date updatedAt;
-    private UUID userId;
+    private Integer previousStock;
+    private Integer newStock;
+    private UUID referenceId;
+    private String referenceType;
+    private Date movementDate;
+    private String notes;
     private UUID productId;
     private UUID productVariantId;
 }

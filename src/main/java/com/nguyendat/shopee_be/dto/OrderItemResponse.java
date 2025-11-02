@@ -4,21 +4,19 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.nguyendat.shopee_be.dto.ProductDto;
 
-import java.util.Date;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CartDto {
+public class OrderItemResponse {
     private UUID id;
     private Integer quantity;
-    private Date createdAt;
-    private Date updatedAt;
-    private UUID userId;
+    private BigDecimal unitPrice;
+    private BigDecimal totalPrice;
     private UUID productId;
     private UUID productVariantId;
 }

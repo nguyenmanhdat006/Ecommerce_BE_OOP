@@ -27,7 +27,7 @@ public class CategoryType {
     @Column(nullable = false)
     private String code;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String description;
 
     @ManyToOne

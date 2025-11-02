@@ -18,70 +18,69 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class User implements UserDetails {
-    
+
     @Id
     @GeneratedValue
     private UUID id;
-    
+
     private String firstName;
     private String lastName;
-    
+
     @JsonIgnore
     private String password;
-    
+
     private Date createdOn;
     private Date updatedOn;
-    
+
     @Column(nullable = false, unique = true)
     private String email;
-    
+
     private String phoneNumber;
     private String provider;
     private String verificationCode;
     private boolean enabled = false;
-    
+
+    @Column(nullable = true)
+    private String avatar;
+
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "AUTH_USER_AUTHORITY",
-        joinColumns = @JoinColumn(referencedColumnName = "id"),
-        inverseJoinColumns = @JoinColumn(referencedColumnName = "id")
-    )
+    @JoinTable(name = "AUTH_USER_AUTHORITY", joinColumns = @JoinColumn(referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(referencedColumnName = "id"))
     private List<Authority> authorities;
-    
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @ToString.Exclude
     private List<Address> addressList;
-        
+
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
     @ToString.Exclude
     private List<Order> orders;
-    
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @ToString.Exclude
     private List<Cart> carts;
-    
+
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
     @ToString.Exclude
     private List<PurchaseHistory> purchaseHistories;
-    
+
     @OneToMany(mappedBy = "changedBy", cascade = CascadeType.ALL)
     @ToString.Exclude
     private List<ProductStatus> productStatusChanges;
-        
+
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
-    
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return authorities;
     }
-    
+
     @Override
     public String getPassword() {
         return this.password;
     }
-    
+
     @Override
     public String getUsername() {
         return this.email;

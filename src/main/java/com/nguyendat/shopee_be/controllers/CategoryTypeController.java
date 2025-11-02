@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.nguyendat.shopee_be.dto.CategoryTypeRequest;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -35,15 +37,17 @@ public class CategoryTypeController {
 
     @PostMapping
     @Operation(summary = "Create category type")
-    public ResponseEntity<CategoryType> create(@RequestBody CategoryType entity) {
-        CategoryType created = categoryTypeService.create(entity);
+    public ResponseEntity<CategoryType> create(@RequestBody CategoryTypeRequest req) {
+        CategoryType created = categoryTypeService.create(req);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update category type")
-    public ResponseEntity<CategoryType> update(@PathVariable UUID id, @RequestBody CategoryType entity) {
-        CategoryType updated = categoryTypeService.update(id, entity);
+    public ResponseEntity<CategoryType> update(
+            @PathVariable UUID id,
+            @RequestBody CategoryTypeRequest req) {
+        CategoryType updated = categoryTypeService.update(id, req);
         return new ResponseEntity<>(updated, HttpStatus.OK);
     }
 
