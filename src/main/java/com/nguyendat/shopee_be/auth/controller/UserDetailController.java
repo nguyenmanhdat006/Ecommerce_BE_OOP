@@ -33,6 +33,7 @@ public class UserDetailController {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())
+                .avatar(user.getAvatar())
                 .id(user.getId())
                 .phoneNumber(user.getPhoneNumber())
                 .addressList(user.getAddressList())
