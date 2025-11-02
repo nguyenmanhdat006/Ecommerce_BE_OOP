@@ -26,12 +26,7 @@ public class AddressController {
     public ResponseEntity<List<Address>> getAll() {
         return new ResponseEntity<>(addressService.findAll(), HttpStatus.OK);
     }
-
-    @GetMapping("/{id}")
-    @Operation(summary = "Get address by id")
-    public ResponseEntity<Address> getById(@PathVariable UUID id) {
-        return new ResponseEntity<>(addressService.findById(id), HttpStatus.OK);
-    }
+    
 
     @PostMapping
     @Operation(summary = "Create address")
