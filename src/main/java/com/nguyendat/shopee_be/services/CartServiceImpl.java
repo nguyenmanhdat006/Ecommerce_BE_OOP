@@ -35,10 +35,20 @@ public class CartServiceImpl implements CartService {
                             .price(cart.getProduct().getPrice())
                             .thumbnail(cart.getProduct().getResources().isEmpty() ? null : cart.getProduct().getResources().get(0).getUrl())
                             .build();
+            com.nguyendat.shopee_be.dto.ProductVariantDto productVariantDto = null;
+            if (cart.getProductVariant() != null) {
+            productVariantDto = com.nguyendat.shopee_be.dto.ProductVariantDto.builder()
+                .id(cart.getProductVariant().getId())
+                .color(cart.getProductVariant().getColor())
+                .size(cart.getProductVariant().getSize())
+                .stockQuantity(cart.getProductVariant().getStockQuantity())
+                .build();
+            }
 
                     return CartResponseDto.builder()
                             .id(cart.getId())
                             .product(productDto)
+                .productVariant(productVariantDto)
                             .quantity(cart.getQuantity())       
                             .createdAt(cart.getCreatedAt())
                             .updatedAt(cart.getUpdatedAt())
