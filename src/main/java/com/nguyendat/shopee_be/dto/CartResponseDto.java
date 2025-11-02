@@ -16,6 +16,7 @@ import java.util.UUID;
 public class CartResponseDto {
     private UUID id;
     private ProductDto product;
+    private com.nguyendat.shopee_be.dto.ProductVariantDto productVariant;
     private Integer quantity;
     private Date createdAt;
     private Date updatedAt;
