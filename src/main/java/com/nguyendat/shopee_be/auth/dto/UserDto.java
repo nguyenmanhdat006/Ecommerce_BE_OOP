@@ -18,5 +18,5 @@ public class UserDto {
     private String avatar;
     private String email;
     private String phoneNumber;
-    private boolean enabled;
+    private Boolean enabled;
 }
