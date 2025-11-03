@@ -54,4 +54,11 @@ public class OrderController {
         orderService.deleteById(id);
         return ResponseEntity.ok().build();
     }
+    @PutMapping("/{id}/status")
+    @Operation(summary = "Update order status")
+    public ResponseEntity<Order> updateStatus(@PathVariable UUID id, @RequestParam String status) {
+        Order updated = orderService.updateStatus(id, status);
+        return new ResponseEntity<>(updated, HttpStatus.OK);
+    }
+
 }
