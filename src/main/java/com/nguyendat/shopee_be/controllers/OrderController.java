@@ -1,5 +1,6 @@
 package com.nguyendat.shopee_be.controllers;
 
+import com.nguyendat.shopee_be.dto.OrderRequest;
 import com.nguyendat.shopee_be.entities.Order;
 import com.nguyendat.shopee_be.services.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,15 +36,15 @@ public class OrderController {
 
     @PostMapping
     @Operation(summary = "Create order")
-    public ResponseEntity<Order> create(@RequestBody Order entity) {
-        Order created = orderService.create(entity);
+    public ResponseEntity<Order> create(@RequestBody OrderRequest request) {
+        Order created = orderService.create(request);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
-    }
+}
 
     @PutMapping("/{id}")
     @Operation(summary = "Update order")
-    public ResponseEntity<Order> update(@PathVariable UUID id, @RequestBody Order entity) {
-        Order updated = orderService.update(id, entity);
+    public ResponseEntity<Order> update(@PathVariable UUID id, @RequestBody OrderRequest request) {
+        Order updated = orderService.update(id, request);
         return new ResponseEntity<>(updated, HttpStatus.OK);
     }
 
