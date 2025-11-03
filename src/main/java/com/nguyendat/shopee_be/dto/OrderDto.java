@@ -15,7 +15,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class OrderDto {
-    private UUID id;
     private String orderNumber;
     private Date orderDate;
     private BigDecimal totalAmount;
