@@ -51,6 +51,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/oauth2/success").permitAll()
                         .requestMatchers("/api/upload/**", "/uploads/**").permitAll()
                         .requestMatchers("/return").permitAll()
+                        .requestMatchers("/ws/chat").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         // .loginPage("/oauth2/authorization/google")
