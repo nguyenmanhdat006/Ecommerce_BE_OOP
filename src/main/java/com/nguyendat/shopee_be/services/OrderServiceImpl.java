@@ -57,6 +57,9 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private OrderItemRepository orderItemRepository;
 
+    @Autowired
+    private OrderStatusHistoryRepository statusHistoryRepository;
+
     @Override
     public List<Order> findAll() {
         return orderRepository.findAll();
@@ -77,7 +80,7 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderNumber(request.getOrderNumber());
         order.setOrderDate(new Date());
         order.setTotalAmount(request.getTotalAmount());
-        order.setStatus(request.getStatus());
+        order.setStatus(OrderStatus.valueOf(request.getStatus()));
         order.setPaymentMethod(request.getPaymentMethod());
         order.setShippingAddress(request.getShippingAddress());
         order.setNotes(request.getNotes());
@@ -142,7 +145,7 @@ public class OrderServiceImpl implements OrderService {
         Map<String, String> vnpParams = new HashMap<>();
         vnpParams.put("vnp_Version", "2.1.0");
         vnpParams.put("vnp_Command", "pay");
-    vnpParams.put("vnp_TmnCode", vnpTmnCode);
+        vnpParams.put("vnp_TmnCode", vnpTmnCode);
         vnpParams.put("vnp_Amount", amount.multiply(BigDecimal.valueOf(100)).toBigInteger().toString());
         vnpParams.put("vnp_CreateDate", new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
         vnpParams.put("vnp_CurrCode", "VND");
@@ -191,35 +194,59 @@ public class OrderServiceImpl implements OrderService {
     Optional<Order> orderOpt = orderRepository.findById(UUID.fromString(orderId));
     if(orderOpt.isPresent() && "00".equals(rspCode)) {
         Order order = orderOpt.get();
-        order.setStatus("PAID");
+        order.setStatus(OrderStatus.PAID);
         orderRepository.save(order);
         return true;
     }
     return false;
     }
 
+
+
     @Override
-    public Order updateStatus(UUID orderId, String newStatus) {
+    public Order updateStatus(UUID orderId, OrderStatus newStatus, String changedBy) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundEx("Order not found"));
 
-        if (!isValidTransition(order.getStatus(), newStatus)) {
+        OrderStatus current = order.getStatus();
+
+        if (!isValidTransition(current, newStatus)) {
             throw new IllegalArgumentException(
-                    "Không thể chuyển từ " + order.getStatus() + " sang " + newStatus
+                    "Không thể chuyển từ trạng thái " + current + " sang " + newStatus
             );
         }
 
+        // Nếu hủy hoặc hoàn trả → trả kho
+        if (newStatus == OrderStatus.CANCELED || newStatus == OrderStatus.REFUND) {
+            for (OrderItem item : order.getOrderItems()) {
+                ProductVariant variant = item.getProductVariant();
+                variant.setStockQuantity(variant.getStockQuantity() + item.getQuantity());
+                productVariantRepository.save(variant);
+            }
+        }
+
+        // Lưu lịch sử trạng thái
+        OrderStatusHistory history = new OrderStatusHistory();
+        history.setOrder(order);
+        history.setOldStatus(current);
+        history.setNewStatus(newStatus);
+        history.setChangedBy(changedBy);
+        statusHistoryRepository.save(history);
+
         order.setStatus(newStatus);
+        order.setUpdatedAt(new Date());
         return orderRepository.save(order);
     }
 
-    private boolean isValidTransition(String currentStatus, String newStatus) {
-        return switch (currentStatus) {
-            case "PENDING" -> List.of("SHIPPING", "CANCELED").contains(newStatus);
-            case "SHIPPING" -> List.of("WAIT_DELIVER", "CANCELED").contains(newStatus);
-            case "WAIT_DELIVER" -> List.of("PAID", "REFUND").contains(newStatus);
-            case "PAID" -> List.of("REFUND").contains(newStatus);
-            default -> false;
+    private boolean isValidTransition(OrderStatus current, OrderStatus next) {
+        return switch (current) {
+            case PENDING -> List.of(OrderStatus.SHIPPING, OrderStatus.CANCELED).contains(next);
+            case SHIPPING -> List.of(OrderStatus.WAIT_DELIVER, OrderStatus.CANCELED).contains(next);
+            case WAIT_DELIVER -> List.of(OrderStatus.PAID, OrderStatus.REFUND).contains(next);
+            case PAID -> next == OrderStatus.REFUND;
+            case CANCELED, REFUND -> false;
         };
     }
+
+
 }

@@ -35,8 +35,9 @@ public class Order {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
     
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status; // PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED
+    private OrderStatus status;
     
     @Column(nullable = false)
     private String paymentMethod; // COD, CREDIT_CARD, MOMO, ZALOPAY
@@ -62,4 +63,9 @@ public class Order {
     protected void onCreate() {
         orderDate = new Date();
     }
+    
+    @Column(name = "updated_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date updatedAt;
+
 }

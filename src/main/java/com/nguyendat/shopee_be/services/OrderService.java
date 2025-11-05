@@ -2,6 +2,7 @@ package com.nguyendat.shopee_be.services;
 
 import com.nguyendat.shopee_be.dto.OrderRequest;
 import com.nguyendat.shopee_be.entities.Order;
+import com.nguyendat.shopee_be.entities.OrderStatus;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -20,5 +21,10 @@ public interface OrderService {
     boolean processVnpayReturned(Map<String, String> params);
 
     // Cập nhật trạng thái đơn hàng
-    Order updateStatus(UUID orderId, String newStatus);
+    /**
+     * @param orderId ID đơn hàng
+     * @param newStatus trạng thái mới (Enum OrderStatus)
+     * @param changedBy username hoặc role của người thao tác
+     */
+    Order updateStatus(UUID orderId, OrderStatus newStatus, String changedBy);
 }
