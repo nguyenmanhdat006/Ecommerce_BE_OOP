@@ -1,5 +1,7 @@
 package com.nguyendat.shopee_be.services;
 import com.nguyendat.shopee_be.auth.repositories.UserDetailRepository;
+import com.nguyendat.shopee_be.config.ChatSocketHandler;
+import com.nguyendat.shopee_be.config.NotificationSocketHandler;
 // import com.nguyendat.shopee_be.dto.OrderItemRequest;
 import com.nguyendat.shopee_be.dto.OrderRequest;
 import com.nguyendat.shopee_be.entities.*;
@@ -11,6 +13,8 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nguyendat.shopee_be.auth.entities.User;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
@@ -59,6 +63,12 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private OrderStatusHistoryRepository statusHistoryRepository;
+
+    @Autowired
+    private NotificationSocketHandler notificationSocketHandler;
+
+    @Autowired
+    private ObjectMapper objectMapper; // Để convert object sang JSON
 
     @Override
     public List<Order> findAll() {
@@ -205,18 +215,20 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Order updateStatus(UUID orderId, OrderStatus newStatus, String changedBy) {
+        // 1️⃣ Lấy đơn hàng
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundEx("Order not found"));
 
         OrderStatus current = order.getStatus();
 
+        // 2️⃣ Kiểm tra chuyển trạng thái hợp lệ
         if (!isValidTransition(current, newStatus)) {
             throw new IllegalArgumentException(
                     "Không thể chuyển từ trạng thái " + current + " sang " + newStatus
             );
         }
 
-        // Nếu hủy hoặc hoàn trả → trả kho
+        // 3️⃣ Nếu hủy hoặc hoàn trả → trả kho
         if (newStatus == OrderStatus.CANCELED || newStatus == OrderStatus.REFUND) {
             for (OrderItem item : order.getOrderItems()) {
                 ProductVariant variant = item.getProductVariant();
@@ -225,7 +237,7 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        // Lưu lịch sử trạng thái
+        // 4️⃣ Lưu lịch sử trạng thái
         OrderStatusHistory history = new OrderStatusHistory();
         history.setOrder(order);
         history.setOldStatus(current);
@@ -233,9 +245,27 @@ public class OrderServiceImpl implements OrderService {
         history.setChangedBy(changedBy);
         statusHistoryRepository.save(history);
 
+        // 5️⃣ Cập nhật trạng thái đơn hàng
         order.setStatus(newStatus);
         order.setUpdatedAt(new Date());
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        // 6️⃣ 🔔 Gửi thông báo realtime qua NotificationSocketHandler
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("type", "ORDER_STATUS");
+            payload.put("orderId", order.getId().toString());
+            payload.put("oldStatus", current.name());
+            payload.put("newStatus", newStatus.name());
+            payload.put("changedBy", changedBy);
+            payload.put("timestamp", System.currentTimeMillis());
+
+            notificationSocketHandler.broadcastNotification(payload);
+        } catch (Exception e) {
+            System.err.println("❌ Failed to broadcast WebSocket message: " + e.getMessage());
+        }
+
+        return savedOrder;
     }
 
     private boolean isValidTransition(OrderStatus current, OrderStatus next) {
@@ -247,6 +277,4 @@ public class OrderServiceImpl implements OrderService {
             case CANCELED, REFUND -> false;
         };
     }
-
-
 }
