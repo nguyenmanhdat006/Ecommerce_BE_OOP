@@ -6,8 +6,6 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
-import com.nguyendat.shopee_be.config.ChatSocketHandler;
-
 @Configuration
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
@@ -15,9 +13,14 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Autowired
     private ChatSocketHandler chatSocketHandler;
 
+    @Autowired
+    private NotificationSocketHandler notificationSocketHandler;
+
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(chatSocketHandler, "/ws/chat")
+                .setAllowedOrigins("*");
+        registry.addHandler(notificationSocketHandler, "/ws/notification")
                 .setAllowedOrigins("*");
     }
 }
