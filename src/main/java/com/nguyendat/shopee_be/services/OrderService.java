@@ -27,4 +27,12 @@ public interface OrderService {
      * @param changedBy username hoặc role của người thao tác
      */
     Order updateStatus(UUID orderId, OrderStatus newStatus, String changedBy);
+
+    /**
+     * Cập nhật trạng thái thanh toán của đơn hàng
+     * @param orderId ID đơn hàng
+     * @param newStatus trạng thái thanh toán (PaymentStatus enum)
+     * @param changedBy người thực hiện (username/role)
+     */
+    Order updatePaymentStatus(UUID orderId, com.nguyendat.shopee_be.entities.PaymentStatus newStatus, String changedBy);
 }
