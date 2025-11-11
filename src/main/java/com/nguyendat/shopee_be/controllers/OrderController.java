@@ -1,7 +1,11 @@
 package com.nguyendat.shopee_be.controllers;
 
 import com.nguyendat.shopee_be.dto.OrderRequest;
+import com.nguyendat.shopee_be.dto.UpdateStatusRequest;
+import com.nguyendat.shopee_be.dto.UpdatePaymentStatusRequest;
 import com.nguyendat.shopee_be.entities.Order;
+import com.nguyendat.shopee_be.entities.OrderStatus;
+import com.nguyendat.shopee_be.entities.PaymentStatus;
 import com.nguyendat.shopee_be.services.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,7 +19,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/orders")
-@CrossOrigin
 @Tag(name = "Orders", description = "Manage customer orders")
 public class OrderController {
 
@@ -54,11 +57,20 @@ public class OrderController {
         orderService.deleteById(id);
         return ResponseEntity.ok().build();
     }
-    @PutMapping("/{id}/status")
+    
+    @PatchMapping("/{id}/status")
     @Operation(summary = "Update order status")
-    public ResponseEntity<Order> updateStatus(@PathVariable UUID id, @RequestParam String status) {
-        Order updated = orderService.updateStatus(id, status);
-        return new ResponseEntity<>(updated, HttpStatus.OK);
+    public ResponseEntity<Order> updateStatus(@PathVariable UUID id, @RequestBody UpdateStatusRequest request, @RequestParam String changedBy) {
+        Order updated = orderService.updateStatus(id, OrderStatus.valueOf(request.getStatus()), changedBy);
+        return ResponseEntity.ok(updated);
     }
+
+    @PatchMapping("/{id}/payment-status")
+    @Operation(summary = "Update payment status")
+    public ResponseEntity<Order> updatePaymentStatus(@PathVariable UUID id, @RequestBody UpdatePaymentStatusRequest request, @RequestParam String changedBy) {
+        Order updated = orderService.updatePaymentStatus(id, PaymentStatus.valueOf(request.getStatus()), changedBy);
+        return ResponseEntity.ok(updated);
+    }
+
 
 }

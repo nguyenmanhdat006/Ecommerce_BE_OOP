@@ -51,6 +51,8 @@ public class WebSecurityConfig {
                         .requestMatchers("/oauth2/success").permitAll()
                         .requestMatchers("/api/upload/**", "/uploads/**").permitAll()
                         .requestMatchers("/return").permitAll()
+                        .requestMatchers("/ws/chat").permitAll()
+                        .requestMatchers("/ws/notification").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         // .loginPage("/oauth2/authorization/google")
@@ -118,9 +120,10 @@ public class WebSecurityConfig {
         var cors = new org.springframework.web.cors.CorsConfiguration();
         cors.addAllowedOrigin("http://localhost:5173"); // FE domain
         cors.addAllowedOrigin("http://localhost:3000");
+        cors.addAllowedOrigin("https://ecommerce-fe-pink-one.vercel.app");
         cors.addAllowedHeader("*");
         cors.addAllowedMethod("*");
-        cors.setAllowCredentials(true); // nếu FE dùng cookies, credentials
+        // cors.setAllowCredentials(true); // nếu FE dùng cookies, credentials
 
         var source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cors);
