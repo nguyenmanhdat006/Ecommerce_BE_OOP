@@ -204,9 +204,16 @@ public class OrderServiceImpl implements OrderService {
     Optional<Order> orderOpt = orderRepository.findById(UUID.fromString(orderId));
     if(orderOpt.isPresent() && "00".equals(rspCode)) {
         Order order = orderOpt.get();
-        order.setStatus(OrderStatus.PAID);
+        // order.setStatus(OrderStatus.PAID);
+        // orderRepository.save(order);
+        // return true;
+        if ("00".equals(rspCode)) {
+            order.setPaymentStatus(PaymentStatus.PAID); 
+        } else {
+            order.setPaymentStatus(PaymentStatus.FAILED);
+        }
         orderRepository.save(order);
-        return true;
+        return "00".equals(rspCode);
     }
     return false;
     }
@@ -266,6 +273,34 @@ public class OrderServiceImpl implements OrderService {
         }
 
         return savedOrder;
+    }
+
+    @Override
+    public Order updatePaymentStatus(UUID orderId, PaymentStatus newStatus, String changedBy) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundEx("Order not found"));
+
+        PaymentStatus old = order.getPaymentStatus();
+        order.setPaymentStatus(newStatus);
+        order.setUpdatedAt(new Date());
+        Order saved = orderRepository.save(order);
+
+        // Send websocket notification
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("type", "PAYMENT_STATUS");
+            payload.put("orderId", order.getId().toString());
+            payload.put("oldPaymentStatus", old != null ? old.name() : null);
+            payload.put("newPaymentStatus", newStatus.name());
+            payload.put("changedBy", changedBy);
+            payload.put("timestamp", System.currentTimeMillis());
+
+            notificationSocketHandler.broadcastNotification(payload);
+        } catch (Exception e) {
+            System.err.println("❌ Failed to broadcast payment status WebSocket message: " + e.getMessage());
+        }
+
+        return saved;
     }
 
     private boolean isValidTransition(OrderStatus current, OrderStatus next) {

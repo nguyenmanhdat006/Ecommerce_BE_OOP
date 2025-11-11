@@ -2,8 +2,10 @@ package com.nguyendat.shopee_be.controllers;
 
 import com.nguyendat.shopee_be.dto.OrderRequest;
 import com.nguyendat.shopee_be.dto.UpdateStatusRequest;
+import com.nguyendat.shopee_be.dto.UpdatePaymentStatusRequest;
 import com.nguyendat.shopee_be.entities.Order;
 import com.nguyendat.shopee_be.entities.OrderStatus;
+import com.nguyendat.shopee_be.entities.PaymentStatus;
 import com.nguyendat.shopee_be.services.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -60,6 +62,13 @@ public class OrderController {
     @Operation(summary = "Update order status")
     public ResponseEntity<Order> updateStatus(@PathVariable UUID id, @RequestBody UpdateStatusRequest request, @RequestParam String changedBy) {
         Order updated = orderService.updateStatus(id, OrderStatus.valueOf(request.getStatus()), changedBy);
+        return ResponseEntity.ok(updated);
+    }
+
+    @PatchMapping("/{id}/payment-status")
+    @Operation(summary = "Update payment status")
+    public ResponseEntity<Order> updatePaymentStatus(@PathVariable UUID id, @RequestBody UpdatePaymentStatusRequest request, @RequestParam String changedBy) {
+        Order updated = orderService.updatePaymentStatus(id, PaymentStatus.valueOf(request.getStatus()), changedBy);
         return ResponseEntity.ok(updated);
     }
 
