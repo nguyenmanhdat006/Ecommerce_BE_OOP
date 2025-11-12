@@ -20,7 +20,6 @@ import com.nguyendat.shopee_be.auth.entities.User;
 
 @RestController
 @RequestMapping("/api/messages")
-@CrossOrigin
 public class MessageController {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageController.class);
