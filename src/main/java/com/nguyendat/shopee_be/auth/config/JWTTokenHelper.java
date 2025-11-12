@@ -24,13 +24,14 @@ public class JWTTokenHelper {
     @Value("${jwt.auth.expires_in}")
     private int expiresIn;
 
-    public String generateToken(String userName){
+    public String generateToken(String userName, String role){
         return Jwts.builder()
                 .issuer(appName)
                 .subject(userName)
                 .issuedAt(new Date())
                 .expiration(generateExpirationDate())
                 .signWith(getSigningKey())
+                .claim("role", role)
                 .compact();
     }
 

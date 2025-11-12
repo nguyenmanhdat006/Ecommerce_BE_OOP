@@ -105,8 +105,10 @@ public class ChatSocketHandler extends TextWebSocketHandler {
 
             // Kiểm tra quyền: chỉ admin mới gửi cho user khác
             boolean isAdmin = checkAdmin(sender);
+            boolean receiverIsAdmin = checkAdmin(receiver);
 
-            if (!isAdmin && !senderId.equals(receiverId)) {
+
+            if (!isAdmin && !receiverIsAdmin) {
                 session.sendMessage(new TextMessage(objectMapper.writeValueAsString(
                     Map.of("error", "Permission denied", "message", "Only admin can send messages to other users"))));
                 return;
@@ -117,6 +119,7 @@ public class ChatSocketHandler extends TextWebSocketHandler {
                     .content(content)
                     .sender(sender)
                     .receiver(receiver)
+                    .createdAt(new Date())
                     .build();
             messageRepository.save(msg);
             logger.info("Message saved: sender={}, receiver={}", senderId, receiverId);
