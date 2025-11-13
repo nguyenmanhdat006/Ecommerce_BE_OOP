@@ -22,6 +22,9 @@ public class OAuth2Controller {
     @Autowired
     OAuth2Service oAuth2Service;
 
+    @Value("${frontend.url}")
+    private String frontendUrl;
+
     @Autowired
     private JWTTokenHelper jwtTokenHelper;
 
@@ -36,7 +39,7 @@ public class OAuth2Controller {
 
         String token = jwtTokenHelper.generateToken(user.getUsername(), user.getAuthorities().iterator().next().getAuthority());
 
-        response.sendRedirect("http://localhost:5173/v1/oauth2/callback?token="+token);
+        response.sendRedirect(frontendUrl + "/v1/oauth2/callback?token="+token);
 
     }
 }
