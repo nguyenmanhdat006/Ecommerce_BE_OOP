@@ -16,11 +16,16 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Autowired
     private NotificationSocketHandler notificationSocketHandler;
 
+    @Autowired
+    private DashboardSocketHandler dashboardSocketHandler;
+
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(chatSocketHandler, "/ws/chat")
                 .setAllowedOrigins("*");
         registry.addHandler(notificationSocketHandler, "/ws/notification")
+                .setAllowedOrigins("*");
+        registry.addHandler(dashboardSocketHandler, "/ws/dashboard")
                 .setAllowedOrigins("*");
     }
 }

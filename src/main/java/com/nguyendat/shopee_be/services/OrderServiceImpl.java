@@ -1,13 +1,12 @@
 package com.nguyendat.shopee_be.services;
+
 import com.nguyendat.shopee_be.auth.repositories.UserDetailRepository;
-import com.nguyendat.shopee_be.config.ChatSocketHandler;
 import com.nguyendat.shopee_be.config.NotificationSocketHandler;
-// import com.nguyendat.shopee_be.dto.OrderItemRequest;
 import com.nguyendat.shopee_be.dto.OrderRequest;
 import com.nguyendat.shopee_be.entities.*;
 import com.nguyendat.shopee_be.exceptions.ResourceNotFoundEx;
 import com.nguyendat.shopee_be.repositories.*;
-// import com.nguyendat.shopee_be.ultil.VnpayUtil;
+import com.nguyendat.shopee_be.auth.entities.User;
 
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nguyendat.shopee_be.auth.entities.User;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +27,9 @@ import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -44,7 +45,6 @@ public class OrderServiceImpl implements OrderService {
 
     @Value("${VNPAY_RETURN_URL_BASE:http://localhost:5173}")
     private String vnpReturnUrlBase;
-
 
     @Autowired
     private OrderRepository orderRepository;
@@ -68,7 +68,12 @@ public class OrderServiceImpl implements OrderService {
     private NotificationSocketHandler notificationSocketHandler;
 
     @Autowired
-    private ObjectMapper objectMapper; // Để convert object sang JSON
+    private DashboardService dashboardService; 
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private static final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class);
 
     @Override
     public List<Order> findAll() {
@@ -83,6 +88,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Order create(OrderRequest request) {
+        log.info("🔥🔥🔥 ============ CREATE METHOD CALLED ============");
+        log.info("🔥🔥🔥 Customer ID: " + request.getCustomerId());
         User customer = userRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new ResourceNotFoundEx("User not found with id: " + request.getCustomerId()));
 
@@ -118,19 +125,28 @@ public class OrderServiceImpl implements OrderService {
         }).collect(Collectors.toList());
 
         savedOrder.setOrderItems(orderItems);
-        return orderRepository.save(savedOrder);
+        log.info("🔥 INFO: Order created with ID: " + savedOrder.getId());
+
+        Order finalOrder = orderRepository.save(savedOrder);
+        log.info("🔥 DEBUG: Order created with ID: " + finalOrder.getId());
+        log.info("🔥 DEBUG: Total amount: " + finalOrder.getTotalAmount());
+
+        // GỬI DASHBOARD EVENT: NEW_ORDER
+        try {
+            // Lấy tên khách hàng: firstName + lastName, hoặc email nếu null
+            String customerName = buildCustomerName(customer);
+            
+            dashboardService.pushNewOrderEvent(
+                finalOrder.getId().toString(),
+                customerName,
+                finalOrder.getTotalAmount().doubleValue()
+            );
+        } catch (Exception e) {
+            System.err.println("❌ Failed to push dashboard NEW_ORDER event: " + e.getMessage());
+        }
+
+        return finalOrder;
     }
-
-    // @Override
-    // public Order update(UUID id, OrderRequest request) {
-    //     Order existing = orderRepository.findById(id)
-    //             .orElseThrow(() -> new ResourceNotFoundEx("Order not found with id: " + id));
-
-    //     existing.setStatus(request.getStatus());
-    //     existing.setNotes(request.getNotes());
-    //     existing.setPaymentMethod(request.getPaymentMethod());
-    //     return orderRepository.save(existing);
-    // }
 
     @Override
     public void deleteById(UUID id) {
@@ -144,14 +160,11 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public String createVnpayUrl(UUID orderId, BigDecimal amount) {
-        // Lấy thông tin đơn hàng
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new ResourceNotFoundEx("Order not found"));
 
-    // Thông tin cố định VNPAY (lấy từ cấu hình / env)
-    String vnp_ReturnUrl = vnpReturnUrlBase + "/vnpay-done/" + orderId;
+        String vnp_ReturnUrl = vnpReturnUrlBase + "/vnpay-done/" + orderId;
 
-        // Các tham số gửi sang VNPAY
         Map<String, String> vnpParams = new HashMap<>();
         vnpParams.put("vnp_Version", "2.1.0");
         vnpParams.put("vnp_Command", "pay");
@@ -167,27 +180,23 @@ public class OrderServiceImpl implements OrderService {
         vnpParams.put("vnp_IpAddr", "127.0.0.1");
 
         try {
-            // Tạo query string sort theo key + encode UTF-8
             String query = vnpParams.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .filter(e -> e.getValue() != null && !e.getValue().isEmpty())
                 .map(e -> e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
                 .collect(Collectors.joining("&"));
 
-            // Tạo chữ ký HMAC-SHA512 bằng thư viện chuẩn Java
             Mac hmacSHA512 = Mac.getInstance("HmacSHA512");
             SecretKeySpec secretKeySpec = new SecretKeySpec(vnpHashSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
             hmacSHA512.init(secretKeySpec);
             byte[] hashBytes = hmacSHA512.doFinal(query.getBytes(StandardCharsets.UTF_8));
 
-            // Chuyển sang hex lowercase (VNPAY yêu cầu)
             StringBuilder hexHash = new StringBuilder();
             for (byte b : hashBytes) {
                 hexHash.append(String.format("%02x", b & 0xff));
             }
             String secureHash = hexHash.toString();
 
-            // Trả về URL đầy đủ
             return vnpUrl + "?" + query + "&vnp_SecureHash=" + secureHash;
 
         } catch (Exception e) {
@@ -195,30 +204,37 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-
-
     @Override
     public boolean processVnpayReturned(Map<String,String> params) {
-    String orderId = params.get("vnp_TxnRef");
-    String rspCode = params.get("vnp_ResponseCode");
-    Optional<Order> orderOpt = orderRepository.findById(UUID.fromString(orderId));
-    if(orderOpt.isPresent() && "00".equals(rspCode)) {
-        Order order = orderOpt.get();
-        // order.setStatus(OrderStatus.PAID);
-        // orderRepository.save(order);
-        // return true;
-        if ("00".equals(rspCode)) {
-            order.setPaymentStatus(PaymentStatus.PAID); 
-        } else {
-            order.setPaymentStatus(PaymentStatus.FAILED);
+        String orderId = params.get("vnp_TxnRef");
+        String rspCode = params.get("vnp_ResponseCode");
+        Optional<Order> orderOpt = orderRepository.findById(UUID.fromString(orderId));
+        
+        if(orderOpt.isPresent()) {
+            Order order = orderOpt.get();
+            PaymentStatus oldPaymentStatus = order.getPaymentStatus();
+            
+            if ("00".equals(rspCode)) {
+                order.setPaymentStatus(PaymentStatus.PAID); 
+            } else {
+                order.setPaymentStatus(PaymentStatus.FAILED);
+            }
+            orderRepository.save(order);
+
+            // GỬI DASHBOARD EVENT: PAYMENT STATUS CHANGED
+            try {
+                if ("00".equals(rspCode) && order.getStatus() == OrderStatus.PAID) {
+                    // Nếu thanh toán thành công và đơn đã PAID → update revenue
+                    dashboardService.pushRevenueUpdate();
+                }
+            } catch (Exception e) {
+                System.err.println("❌ Failed to push dashboard PAYMENT event: " + e.getMessage());
+            }
+
+            return "00".equals(rspCode);
         }
-        orderRepository.save(order);
-        return "00".equals(rspCode);
+        return false;
     }
-    return false;
-    }
-
-
 
     @Override
     public Order updateStatus(UUID orderId, OrderStatus newStatus, String changedBy) {
@@ -226,12 +242,12 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundEx("Order not found"));
 
-        OrderStatus current = order.getStatus();
+        OrderStatus oldStatus = order.getStatus();
 
         // 2️⃣ Kiểm tra chuyển trạng thái hợp lệ
-        if (!isValidTransition(current, newStatus)) {
+        if (!isValidTransition(oldStatus, newStatus)) {
             throw new IllegalArgumentException(
-                    "Không thể chuyển từ trạng thái " + current + " sang " + newStatus
+                    "Không thể chuyển từ trạng thái " + oldStatus + " sang " + newStatus
             );
         }
 
@@ -247,7 +263,7 @@ public class OrderServiceImpl implements OrderService {
         // 4️⃣ Lưu lịch sử trạng thái
         OrderStatusHistory history = new OrderStatusHistory();
         history.setOrder(order);
-        history.setOldStatus(current);
+        history.setOldStatus(oldStatus);
         history.setNewStatus(newStatus);
         history.setChangedBy(changedBy);
         statusHistoryRepository.save(history);
@@ -257,19 +273,35 @@ public class OrderServiceImpl implements OrderService {
         order.setUpdatedAt(new Date());
         Order savedOrder = orderRepository.save(order);
 
-        // 6️⃣ 🔔 Gửi thông báo realtime qua NotificationSocketHandler
+        // 6️⃣  Gửi thông báo NOTIFICATION qua NotificationSocketHandler
         try {
             Map<String, Object> payload = new HashMap<>();
             payload.put("type", "ORDER_STATUS");
             payload.put("orderId", order.getId().toString());
-            payload.put("oldStatus", current.name());
+            payload.put("oldStatus", oldStatus.name());
             payload.put("newStatus", newStatus.name());
             payload.put("changedBy", changedBy);
             payload.put("timestamp", System.currentTimeMillis());
 
             notificationSocketHandler.broadcastNotification(payload);
         } catch (Exception e) {
-            System.err.println("❌ Failed to broadcast WebSocket message: " + e.getMessage());
+            System.err.println("❌ Failed to broadcast WebSocket notification: " + e.getMessage());
+        }
+
+        // 7️⃣  GỬI DASHBOARD EVENT: ORDER_STATUS_CHANGED
+        try {
+            dashboardService.pushOrderStatusChanged(
+                orderId.toString(),
+                oldStatus.name(),
+                newStatus.name()
+            );
+
+            // Nếu đơn chuyển sang PAID (hoàn thành) → update revenue
+            if (newStatus == OrderStatus.PAID) {
+                dashboardService.pushRevenueUpdate();
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Failed to push dashboard ORDER_STATUS_CHANGED event: " + e.getMessage());
         }
 
         return savedOrder;
@@ -280,24 +312,34 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundEx("Order not found"));
 
-        PaymentStatus old = order.getPaymentStatus();
+        PaymentStatus oldPaymentStatus = order.getPaymentStatus();
         order.setPaymentStatus(newStatus);
         order.setUpdatedAt(new Date());
         Order saved = orderRepository.save(order);
 
-        // Send websocket notification
+        //  Gửi NOTIFICATION WebSocket
         try {
             Map<String, Object> payload = new HashMap<>();
             payload.put("type", "PAYMENT_STATUS");
             payload.put("orderId", order.getId().toString());
-            payload.put("oldPaymentStatus", old != null ? old.name() : null);
+            payload.put("oldPaymentStatus", oldPaymentStatus != null ? oldPaymentStatus.name() : null);
             payload.put("newPaymentStatus", newStatus.name());
             payload.put("changedBy", changedBy);
             payload.put("timestamp", System.currentTimeMillis());
 
             notificationSocketHandler.broadcastNotification(payload);
         } catch (Exception e) {
-            System.err.println("❌ Failed to broadcast payment status WebSocket message: " + e.getMessage());
+            System.err.println("❌ Failed to broadcast payment status WebSocket notification: " + e.getMessage());
+        }
+
+        //  GỬI DASHBOARD EVENT nếu thanh toán thành công
+        try {
+            if (newStatus == PaymentStatus.PAID && order.getStatus() == OrderStatus.PAID) {
+                // Chỉ update revenue khi cả payment status VÀ order status đều PAID
+                dashboardService.pushRevenueUpdate();
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Failed to push dashboard PAYMENT event: " + e.getMessage());
         }
 
         return saved;
@@ -311,5 +353,17 @@ public class OrderServiceImpl implements OrderService {
             case PAID -> next == OrderStatus.REFUND;
             case CANCELED, REFUND -> false;
         };
+    }
+
+    private String buildCustomerName(User customer) {
+        if (customer.getFirstName() != null && customer.getLastName() != null) {
+            return customer.getFirstName() + " " + customer.getLastName();
+        } else if (customer.getFirstName() != null) {
+            return customer.getFirstName();
+        } else if (customer.getLastName() != null) {
+            return customer.getLastName();
+        } else {
+            return customer.getEmail();
+        }
     }
 }
