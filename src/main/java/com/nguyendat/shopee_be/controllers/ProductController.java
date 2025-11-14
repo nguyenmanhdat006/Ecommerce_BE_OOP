@@ -6,12 +6,16 @@ import com.nguyendat.shopee_be.services.ProductService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -59,5 +63,53 @@ public class ProductController {
         return new ResponseEntity<>(product,HttpStatus.OK);
     }
 
+    /**
+     * Search products with multiple filters and pagination
+     * 
+     * @param keyword - Search keyword (searches in name, description, brand)
+     * @param categoryId - Filter by category ID
+     * @param typeId - Filter by category type ID
+     * @param brand - Filter by exact brand name
+     * @param minPrice - Minimum price filter
+     * @param maxPrice - Maximum price filter
+     * @param minRating - Minimum rating filter
+     * @param isNewArrival - Filter by new arrival status
+     * @param sortBy - Field to sort by (e.g., name, price, rating, createdAt)
+     * @param sortDirection - Sort direction (asc or desc)
+     * @param page - Page number (default: 0)
+     * @param size - Page size (default: 10)
+     * @return Paginated list of products matching the search criteria
+     */
+    @GetMapping("/search")
+    public ResponseEntity<Map<String, Object>> searchProducts(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) UUID typeId,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) Float minRating,
+            @RequestParam(required = false) Boolean isNewArrival,
+            @RequestParam(required = false, defaultValue = "name") String sortBy,
+            @RequestParam(required = false, defaultValue = "asc") String sortDirection,
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "10") int size
+    ) {
+        Page<ProductDto> productPage = productService.searchProducts(
+                keyword, categoryId, typeId, brand, minPrice, maxPrice, 
+                minRating, isNewArrival, sortBy, sortDirection, page, size
+        );
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("products", productPage.getContent());
+        response.put("currentPage", productPage.getNumber());
+        response.put("totalItems", productPage.getTotalElements());
+        response.put("totalPages", productPage.getTotalPages());
+        response.put("pageSize", productPage.getSize());
+        response.put("hasNext", productPage.hasNext());
+        response.put("hasPrevious", productPage.hasPrevious());
+        
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
 }
