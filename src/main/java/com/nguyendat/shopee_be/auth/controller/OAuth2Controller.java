@@ -5,6 +5,7 @@ import com.nguyendat.shopee_be.auth.entities.User;
 import com.nguyendat.shopee_be.auth.services.OAuth2Service;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -22,6 +23,9 @@ public class OAuth2Controller {
     @Autowired
     OAuth2Service oAuth2Service;
 
+    @Value("${frontend.url}")
+    private String frontendUrl;
+
     @Autowired
     private JWTTokenHelper jwtTokenHelper;
 
@@ -34,9 +38,9 @@ public class OAuth2Controller {
             user = oAuth2Service.createUser(oAuth2User,"google");
         }
 
-        String token = jwtTokenHelper.generateToken(user.getUsername());
+        String token = jwtTokenHelper.generateToken(user.getUsername(), user.getAuthorities().iterator().next().getAuthority());
 
-        response.sendRedirect("http://localhost:5173/v1/oauth2/callback?token="+token);
+        response.sendRedirect(frontendUrl + "/v1/oauth2/callback?token="+token);
 
     }
 }

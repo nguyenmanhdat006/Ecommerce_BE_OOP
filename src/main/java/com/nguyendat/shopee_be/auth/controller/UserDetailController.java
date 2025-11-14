@@ -1,7 +1,9 @@
 package com.nguyendat.shopee_be.auth.controller;
 
 import com.nguyendat.shopee_be.auth.dto.UserDetailsDto;
+import com.nguyendat.shopee_be.auth.dto.UserDto;
 import com.nguyendat.shopee_be.auth.entities.User;
+import com.nguyendat.shopee_be.auth.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.Principal;
+import java.util.List;
 
 @RestController
-@CrossOrigin
 @RequestMapping("/api/user")
 public class UserDetailController {
 
@@ -25,6 +27,9 @@ public class UserDetailController {
 
     @Autowired
     private UserDetailsService userDetailsService;
+
+    @Autowired
+    private UserService userService;
 
     @GetMapping("/profile")
     public ResponseEntity<UserDetailsDto> getUserProfile(Principal principal){
@@ -48,5 +53,15 @@ public class UserDetailController {
         logger.info("UserDetailsDto: {}", userDetailsDto);
         return new ResponseEntity<>(userDetailsDto, HttpStatus.OK);
 
+    }
+
+    /**
+     * Get all users (for admin to initiate chat)
+     * GET /api/user/all
+     */
+    @GetMapping("/all")
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        List<UserDto> users = userService.findAll();
+        return new ResponseEntity<>(users, HttpStatus.OK);
     }
 }
