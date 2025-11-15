@@ -2,7 +2,9 @@ package com.nguyendat.shopee_be.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nguyendat.shopee_be.entities.DashboardEvent;
+import com.nguyendat.shopee_be.services.DashboardService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
@@ -11,6 +13,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
@@ -18,11 +21,14 @@ public class DashboardSocketHandler extends TextWebSocketHandler {
     
     private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
     private final ObjectMapper mapper = new ObjectMapper();
+    
+    @Autowired
+    private DashboardService dashboardService; 
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         sessions.add(session);
-        log.info("✅ Dashboard client connected: {} | Total: {}", 
+        log.info(" Dashboard client connected: {} | Total: {}", 
                  session.getId(), sessions.size());
         
         // Gửi welcome message
@@ -31,6 +37,23 @@ public class DashboardSocketHandler extends TextWebSocketHandler {
             "Connected to dashboard", 
             Instant.now().toString()
         ));
+        
+        // TỰ ĐỘNG GỬI CHARTS DATA SAU 500ms
+        CompletableFuture.runAsync(() -> {
+            try {
+                Thread.sleep(500); // Delay để client sẵn sàng nhận
+                
+                log.info("📊 Sending initial charts data to client {}", session.getId());
+                
+                dashboardService.pushKpiUpdate();
+                dashboardService.pushHourlyRevenue();
+                dashboardService.pushOrderStatusDistribution();
+                
+                log.info("✅ Initial charts data sent to client {}", session.getId());
+            } catch (Exception e) {
+                log.error("❌ Failed to send initial charts data: {}", e.getMessage());
+            }
+        });
     }
 
     @Override
@@ -47,7 +70,7 @@ public class DashboardSocketHandler extends TextWebSocketHandler {
         sessions.remove(session);
     }
 
-    // ✅ Broadcast với error handling
+    //  Broadcast với error handling
     public void broadcast(DashboardEvent<?> event) {
         String json;
         try {
@@ -75,7 +98,7 @@ public class DashboardSocketHandler extends TextWebSocketHandler {
         log.debug("📡 Broadcasted {} to {} sessions", event.getType(), sessions.size());
     }
 
-    // ✅ Send to single session
+    //  Send to single session
     private void sendToSession(WebSocketSession session, DashboardEvent<?> event) {
         try {
             String json = mapper.writeValueAsString(event);
@@ -86,7 +109,7 @@ public class DashboardSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    // ✅ Helper method
+    // Helper method
     public void sendEvent(String type, Object payload) {
         DashboardEvent<Object> event = new DashboardEvent<>(
             type, payload, Instant.now().toString()
