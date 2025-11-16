@@ -39,21 +39,21 @@ public class DashboardSocketHandler extends TextWebSocketHandler {
         ));
         
         // TỰ ĐỘNG GỬI CHARTS DATA SAU 500ms
-        CompletableFuture.runAsync(() -> {
-            try {
-                Thread.sleep(500); // Delay để client sẵn sàng nhận
+        // CompletableFuture.runAsync(() -> {
+        //     try {
+        //         Thread.sleep(500); // Delay để client sẵn sàng nhận
                 
-                log.info("📊 Sending initial charts data to client {}", session.getId());
+        //         log.info("📊 Sending initial charts data to client {}", session.getId());
                 
-                dashboardService.pushKpiUpdate();
-                dashboardService.pushHourlyRevenue();
-                dashboardService.pushOrderStatusDistribution();
+        //         dashboardService.pushKpiUpdate();
+        //         dashboardService.pushHourlyRevenue();
+        //         dashboardService.pushOrderStatusDistribution();
                 
-                log.info("✅ Initial charts data sent to client {}", session.getId());
-            } catch (Exception e) {
-                log.error("❌ Failed to send initial charts data: {}", e.getMessage());
-            }
-        });
+        //         log.info("✅ Initial charts data sent to client {}", session.getId());
+        //     } catch (Exception e) {
+        //         log.error("❌ Failed to send initial charts data: {}", e.getMessage());
+        //     }
+        // });
     }
 
     @Override
