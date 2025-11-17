@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public interface CartService {
     List<CartResponseDto> findAll();
+    List<CartResponseDto> findByUserId(UUID userId);
     CartDto findById(UUID id);
     CartDto create(CartDto cartDto);
     CartDto update(UUID id, CartDto cartDto);

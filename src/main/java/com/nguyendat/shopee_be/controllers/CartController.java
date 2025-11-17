@@ -28,6 +28,12 @@ public class CartController {
         return new ResponseEntity<>(dtos, HttpStatus.OK);
     }
 
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<CartResponseDto>> getByUserId(@PathVariable UUID userId) {
+        List<CartResponseDto> dtos = cartService.findByUserId(userId);
+        return new ResponseEntity<>(dtos, HttpStatus.OK);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<CartDto> getById(@PathVariable UUID id) {
         CartDto dto = cartService.findById(id);
