@@ -25,6 +25,11 @@ public class DashboardSocketHandler extends TextWebSocketHandler {
     @Autowired
     private DashboardService dashboardService; 
 
+
+    public int getConnectedClients() {
+        return sessions.size();
+    }
+
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         sessions.add(session);

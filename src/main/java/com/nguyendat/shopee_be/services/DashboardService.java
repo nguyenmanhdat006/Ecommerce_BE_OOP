@@ -16,9 +16,12 @@ import java.util.*;
 @Service
 public class DashboardService {
     
-    @Autowired private OrderRepository orderRepository;
-    @Autowired private DashboardSocketHandler socketHandler;
-    
+    @Autowired 
+    private OrderRepository orderRepository;
+
+    @Autowired 
+    private DashboardSocketHandler socketHandler;
+
     // Đếm số đơn đang xử lý (chưa hoàn thành)
     public int getProcessingOrders() {
         int pending = orderRepository.countByStatus(OrderStatus.PENDING);
@@ -159,13 +162,22 @@ public class DashboardService {
 
     @Scheduled(fixedRate = 5000)
     public void autoPushDashboard() {
-        try {
-            pushKpiUpdate();             
-            pushRevenueUpdate();            
-            pushHourlyRevenue();            
-            pushOrderStatusDistribution();  
 
-            log.info("⏱️ Auto pushed dashboard data every 5 seconds");
+        int clients = socketHandler.getConnectedClients();
+
+        if (clients == 0) {
+            log.debug("⏳ No active dashboard clients → skip push");
+            return;
+        }
+
+        try {
+            pushKpiUpdate();
+            pushRevenueUpdate();
+            pushHourlyRevenue();
+            pushOrderStatusDistribution();
+
+            log.info("📡 Dashboard data pushed to {} clients", clients);
+
         } catch (Exception e) {
             log.error("❌ Failed auto push dashboard: {}", e.getMessage());
         }
