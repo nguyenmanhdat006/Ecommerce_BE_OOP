@@ -58,6 +58,40 @@ public class CartServiceImpl implements CartService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<CartResponseDto> findByUserId(UUID userId) {
+        return repository.findAllByUser_Id(userId)
+                .stream()
+                .map(cart -> {
+                    ProductDto productDto = ProductDto.builder()
+                            .id(cart.getProduct().getId())
+                            .name(cart.getProduct().getName())
+                            .price(cart.getProduct().getPrice())
+                            .thumbnail(cart.getProduct().getResources().isEmpty() ? null : cart.getProduct().getResources().get(0).getUrl())
+                            .build();
+            com.nguyendat.shopee_be.dto.ProductVariantDto productVariantDto = null;
+            if (cart.getProductVariant() != null) {
+            productVariantDto = com.nguyendat.shopee_be.dto.ProductVariantDto.builder()
+                .id(cart.getProductVariant().getId())
+                .color(cart.getProductVariant().getColor())
+                .size(cart.getProductVariant().getSize())
+                .stockQuantity(cart.getProductVariant().getStockQuantity())
+                .build();
+            }
+
+                    return CartResponseDto.builder()
+                            .id(cart.getId())
+                            .product(productDto)
+                .productVariant(productVariantDto)
+                            .quantity(cart.getQuantity())       
+                            .createdAt(cart.getCreatedAt())
+                            .updatedAt(cart.getUpdatedAt())
+                            .userId(cart.getUser().getId())
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
 
     @Override
     public CartDto findById(UUID id) {
