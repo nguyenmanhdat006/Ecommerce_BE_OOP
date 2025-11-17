@@ -80,7 +80,7 @@ public class ProductServiceImpl implements ProductService{
 
     @Override
     public Product updateProduct(ProductDto productDto, UUID id) {
-        Product product= productRepository.findById(id).orElseThrow(()-> new ResourceNotFoundEx("Product Not Found!"));
+        Product product = productRepository.findById(id).orElseThrow(()-> new ResourceNotFoundEx("Product Not Found!"));
         productDto.setId(product.getId());
         return productRepository.save(productMapper.mapToProductEntity(productDto));
     }
