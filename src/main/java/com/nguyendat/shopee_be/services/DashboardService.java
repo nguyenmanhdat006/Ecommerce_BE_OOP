@@ -166,7 +166,7 @@ public class DashboardService {
         int clients = socketHandler.getConnectedClients();
 
         if (clients == 0) {
-            log.debug("⏳ No active dashboard clients → skip push");
+            // log.debug("⏳ No active dashboard clients → skip push");
             return;
         }
 
