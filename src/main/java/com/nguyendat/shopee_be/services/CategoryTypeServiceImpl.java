@@ -7,6 +7,9 @@ import com.nguyendat.shopee_be.repositories.CategoryRepository;
 import com.nguyendat.shopee_be.repositories.CategoryTypeRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 
 import java.util.List;
 import java.util.UUID;
@@ -22,17 +25,23 @@ public class CategoryTypeServiceImpl implements CategoryTypeService {
     }
 
     @Override
+    @Cacheable(value = "categoryTypeList")
     public List<CategoryType> findAll() {
         return repository.findAll();
     }
 
     @Override
+    @Cacheable(value = "categoryType", key = "#id")
     public CategoryType findById(UUID id) {
         return repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundEx("CategoryType not found with id: " + id));
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "categoryType", key = "#request.id"),
+            @CacheEvict(value = "categoryTypeList", allEntries = true)
+    })
     public CategoryType create(CategoryTypeRequest request) {
         var category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundEx("Category not found"));
@@ -48,6 +57,10 @@ public class CategoryTypeServiceImpl implements CategoryTypeService {
     }
 
     @Override
+    @Caching(evict = {
+        @CacheEvict(value = "categoryType", key = "#id"),
+        @CacheEvict(value = "categoryTypeList", allEntries = true)
+    })
     public CategoryType update(UUID id, CategoryTypeRequest request) {
         CategoryType existing = findById(id);
 
@@ -63,6 +76,10 @@ public class CategoryTypeServiceImpl implements CategoryTypeService {
     }
 
     @Override
+    @Caching(evict = {
+        @CacheEvict(value = "categoryType", key = "#id"),
+        @CacheEvict(value = "categoryTypeList", allEntries = true)
+    })
     public void deleteById(UUID id) {
         repository.deleteById(id);
     }

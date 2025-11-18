@@ -8,7 +8,9 @@ import com.nguyendat.shopee_be.exceptions.ResourceNotFoundEx;
 import com.nguyendat.shopee_be.repositories.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.*;
@@ -19,16 +21,18 @@ public class CategoryService {
 
 
     private static final Logger logger = LoggerFactory.getLogger(CategoryService.class);
+
     @Autowired
     private CategoryRepository categoryRepository;
 
+    @Cacheable(value = "category:id", key = "#categoryId")
     public Category getCategory(UUID categoryId){
-
-        logger.info("CategoryService getCategory: categoryId={}", categoryId);
+        // logger.info("CategoryService getCategory: categoryId={}", categoryId);
         Optional<Category> category = categoryRepository.findById(categoryId);
         return category.orElse(null);
     }
 
+    @CacheEvict(value = {"category:all"}, allEntries = true)
     public Category createCategory(CategoryDto categoryDto){
         Category category = mapToEntity(categoryDto);
         return categoryRepository.save(category);
@@ -60,11 +64,15 @@ public class CategoryService {
         }).collect(Collectors.toList());
     }
 
-
+    @Cacheable(value = "category:all")
     public List<Category> getAllCategory() {
         return categoryRepository.findAll();
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "category", key = "#categoryId"),
+        @CacheEvict(value = "categoryList", allEntries = true)
+    })
     public Category updateCategory(CategoryDto categoryDto, UUID categoryId) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(()-> new ResourceNotFoundEx("Category not found with Id "+categoryDto.getId()));
@@ -107,6 +115,10 @@ public class CategoryService {
         return  categoryRepository.save(category);
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "category", key = "#categoryId"),
+        @CacheEvict(value = "categoryList", allEntries = true)
+    })
     public void deleteCategory(UUID categoryId) {
         categoryRepository.deleteById(categoryId);
     }
