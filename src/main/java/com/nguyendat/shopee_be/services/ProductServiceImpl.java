@@ -14,6 +14,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -32,12 +35,17 @@ public class ProductServiceImpl implements ProductService{
     private ProductMapper productMapper;
 
     @Override
+    @Caching(evict = {
+        @CacheEvict(value = "product", key = "#result.id"),
+        @CacheEvict(value = "productList", allEntries = true)
+    })
     public Product addProduct(ProductDto productDto) {
         Product product = productMapper.mapToProductEntity(productDto);
         return productRepository.save(product);
     }
 
     @Override
+    @Cacheable(value = "productList", key = "#categoryId + '_' + #typeId")
     public List<ProductDto> getAllProducts(UUID categoryId, UUID typeId) {
 
         Specification<Product> productSpecification= (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
@@ -68,6 +76,7 @@ public class ProductServiceImpl implements ProductService{
     }
 
     @Override
+    @Cacheable(value = "product", key = "#id")
     public ProductDto getProductById(UUID id) {
         Product product= productRepository.findById(id).orElseThrow(()-> new ResourceNotFoundEx("Product Not Found!"));
         ProductDto productDto = productMapper.mapProductToDto(product);
@@ -78,6 +87,10 @@ public class ProductServiceImpl implements ProductService{
         return productDto;
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "product", key = "#productDto.id"),
+        @CacheEvict(value = "productList", allEntries = true)
+    })
     @Override
     public Product updateProduct(ProductDto productDto, UUID id) {
         Product product = productRepository.findById(id).orElseThrow(()-> new ResourceNotFoundEx("Product Not Found!"));
