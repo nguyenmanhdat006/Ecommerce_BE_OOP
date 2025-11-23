@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -44,8 +46,11 @@ public class User implements UserDetails {
     private String avatar;
 
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinTable(name = "AUTH_USER_AUTHORITY", joinColumns = @JoinColumn(referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(referencedColumnName = "id"))
-    private List<Authority> authorities;
+        @JoinTable(
+            name = "auth_user_authority",
+            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"), 
+            inverseJoinColumns = @JoinColumn(name = "authorities_id", referencedColumnName = "id"))
+    private List<Authority> authorities = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @ToString.Exclude

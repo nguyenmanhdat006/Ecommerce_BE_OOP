@@ -9,6 +9,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -49,11 +50,17 @@ public class AuthController {
 
             if (authenticationResponse.isAuthenticated()) {
                 User user = (User) authenticationResponse.getPrincipal();
+
                 if (!user.isEnabled()) {
                     return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
                 }
-                // generate jwt token
-                String token = jwtTokenHelper.generateToken(user.getEmail(), user.getAuthorities().iterator().next().getAuthority());
+
+                String role = user.getAuthorities().stream()
+                        .findFirst()
+                        .map(GrantedAuthority::getAuthority)
+                        .orElse("USER");
+
+                String token = jwtTokenHelper.generateToken(user.getEmail(), role);
 
                 UserDto userDto = UserDto.builder()
                         .id(user.getId())
@@ -64,14 +71,14 @@ public class AuthController {
                         .enabled(user.isEnabled())
                         .avatar(user.getAvatar())
                         .build();
+
                 LoginResponse loginResponse = LoginResponse.builder()
                         .token(token)
                         .user(userDto)
                         .build();
 
-                return new ResponseEntity<LoginResponse>(loginResponse, HttpStatus.OK);
+                return new ResponseEntity<>(loginResponse, HttpStatus.OK);
             }
-
         } catch (BadCredentialsException e) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -88,8 +95,8 @@ public class AuthController {
 
     @PostMapping("/verify")
     public ResponseEntity<?> verifyCode(@RequestBody Map<String, String> map) {
-        String userName = map.get("userName"); // map : lưu trữ dữ liệu dưới dạng key-value
-        String code = map.get("code"); // phương thức map.get : lấy value của key đó
+        String userName = map.get("userName");
+        String code = map.get("code"); 
 
         User user = (User) userDetailsService.loadUserByUsername(userName);
         if (null != user && user.getVerificationCode().equals(code)) {
