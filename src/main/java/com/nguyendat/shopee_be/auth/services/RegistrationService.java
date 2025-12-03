@@ -2,6 +2,7 @@ package com.nguyendat.shopee_be.auth.services;
 
 import com.nguyendat.shopee_be.auth.dto.RegistrationRequest;
 import com.nguyendat.shopee_be.auth.dto.RegistrationResponse;
+import com.nguyendat.shopee_be.auth.entities.Authority;
 import com.nguyendat.shopee_be.auth.entities.User;
 import com.nguyendat.shopee_be.auth.helper.VerificationCodeGenerator;
 import com.nguyendat.shopee_be.auth.repositories.UserDetailRepository;
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ServerErrorException;
+import java.util.List;
 
 @Service
 public class  RegistrationService {
@@ -49,8 +51,10 @@ public class  RegistrationService {
             String code = VerificationCodeGenerator.generateCode();
 
             user.setVerificationCode(code);
-            user.setAuthorities(authorityService.getUserAuthority());
-            userDetailRepository.save(user); // đến đây user vẫn chưa được verìy -> cần send email để verify
+
+            // Thay toàn bộ đoạn cũ bằng đúng 1 dòng này:
+            ((List<Authority>) (List<?>) user.getAuthorities()).addAll(authorityService.getUserAuthority());
+            userDetailRepository.save(user); 
 
             //call method to send email
             emailService.sendMail(user);
