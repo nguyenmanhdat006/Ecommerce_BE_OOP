@@ -345,6 +345,11 @@ public class OrderServiceImpl implements OrderService {
         return saved;
     }
 
+    @Override
+    public List<Order> findByUser(com.nguyendat.shopee_be.auth.entities.User user) {
+        return orderRepository.findByCustomer(user);
+    }
+
     private boolean isValidTransition(OrderStatus current, OrderStatus next) {
         return switch (current) {
             case PENDING -> List.of(OrderStatus.SHIPPING, OrderStatus.CANCELED).contains(next);
