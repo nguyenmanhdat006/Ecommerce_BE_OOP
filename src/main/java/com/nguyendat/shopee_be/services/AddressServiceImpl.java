@@ -1,5 +1,7 @@
 package com.nguyendat.shopee_be.services;
 
+import com.nguyendat.shopee_be.auth.entities.User;
+import com.nguyendat.shopee_be.dto.AddressResponse;
 import com.nguyendat.shopee_be.entities.Address;
 import com.nguyendat.shopee_be.exceptions.ResourceNotFoundEx;
 import com.nguyendat.shopee_be.repositories.AddressRepository;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class AddressServiceImpl implements AddressService {
@@ -44,5 +47,31 @@ public class AddressServiceImpl implements AddressService {
     @Override
     public void deleteById(UUID id) {
         repository.deleteById(id);
+    }
+
+    @Override
+    public List<Address> findByUser(User user) {
+        return repository.findByUser(user);
+    }
+
+    @Override
+    public List<AddressResponse> findByUserAsDto(User user) {
+        List<Address> addresses = repository.findByUser(user);
+        return addresses.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    private AddressResponse convertToDto(Address address) {
+        return AddressResponse.builder()
+                .id(address.getId())
+                .name(address.getName())
+                .street(address.getStreet())
+                .city(address.getCity())
+                .state(address.getState())
+                .zipCode(address.getZipCode())
+                .phoneNumber(address.getPhoneNumber())
+                .userId(address.getUser() != null ? address.getUser().getId() : null)
+                .build();
     }
 }
