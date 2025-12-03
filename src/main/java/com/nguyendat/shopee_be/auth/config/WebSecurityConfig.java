@@ -1,6 +1,7 @@
 package com.nguyendat.shopee_be.auth.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,6 +19,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nguyendat.shopee_be.auth.services.OAuth2Service;
+import com.nguyendat.shopee_be.auth.services.OAuth2SuccessHandler;
 import com.nguyendat.shopee_be.exceptions.ErrorResponse;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,12 +30,21 @@ import org.springframework.http.HttpStatus;
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig {
+    @Autowired
+    private OAuth2Service oAuth2Service;
+
+    @Autowired
+    private OAuth2SuccessHandler oAuth2SuccessHandler;
+
 
     @Autowired
     private UserDetailsService userDetailsService;
 
     @Autowired
     private JWTTokenHelper jwtTokenHelper;
+
+    @Value("${cors.allowed-origins:http://localhost:5173,http://localhost:3000,https://ecommerce-fe-pink-one.vercel.app}")
+    private String corsAllowedOrigins; // comma separated
 
     private static final String[] publicApis = {
             "/api/auth/**",
@@ -55,8 +67,8 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/dashboard/kpi").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
-                        // .loginPage("/oauth2/authorization/google")
-                        .defaultSuccessUrl("/oauth2/success", false))
+                        .userInfoEndpoint(user -> user.userService(oAuth2Service))
+                        .successHandler(oAuth2SuccessHandler))
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -118,9 +130,13 @@ public class WebSecurityConfig {
     @Bean
     public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
         var cors = new org.springframework.web.cors.CorsConfiguration();
-        cors.addAllowedOrigin("http://localhost:5173"); // FE domain
-        cors.addAllowedOrigin("http://localhost:3000");
-        cors.addAllowedOrigin("https://ecommerce-fe-pink-one.vercel.app");
+        // load allowed origins from property (comma separated)
+        for (String origin : corsAllowedOrigins.split(",")) {
+            String trimmed = origin.trim();
+            if (!trimmed.isEmpty()) {
+                cors.addAllowedOrigin(trimmed);
+            }
+        }
         cors.addAllowedHeader("*");
         cors.addAllowedMethod("*");
         // cors.setAllowCredentials(true); // nếu FE dùng cookies, credentials
