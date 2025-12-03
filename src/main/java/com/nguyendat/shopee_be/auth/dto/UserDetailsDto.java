@@ -20,6 +20,7 @@ public class UserDetailsDto {
     private String lastName;
     private String phoneNumber;
     private String email;
+    private String role;
     private Object authorityList;
     private String avatar;
     private List<Address> addressList;

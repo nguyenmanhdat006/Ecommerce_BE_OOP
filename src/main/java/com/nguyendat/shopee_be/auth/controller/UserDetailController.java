@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,6 +39,12 @@ public class UserDetailController {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
+        // Get the first role (USER or ADMIN)
+        String role = user.getAuthorities().stream()
+                .findFirst()
+                .map(authority -> authority.getAuthority())
+                .orElse("USER");
+
         UserDetailsDto userDetailsDto = UserDetailsDto.builder()
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
@@ -47,6 +52,7 @@ public class UserDetailController {
                 .avatar(user.getAvatar())
                 .id(user.getId())
                 .phoneNumber(user.getPhoneNumber())
+                .role(role)
                 .addressList(user.getAddressList())
                 .authorityList(user.getAuthorities().toArray()).build();
 
