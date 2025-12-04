@@ -35,4 +35,7 @@ public interface OrderService {
      * @param changedBy người thực hiện (username/role)
      */
     Order updatePaymentStatus(UUID orderId, com.nguyendat.shopee_be.entities.PaymentStatus newStatus, String changedBy);
+
+    // Lấy đơn hàng theo user (dùng khi client truyền access token)
+    java.util.List<Order> findByUser(com.nguyendat.shopee_be.auth.entities.User user);
 }

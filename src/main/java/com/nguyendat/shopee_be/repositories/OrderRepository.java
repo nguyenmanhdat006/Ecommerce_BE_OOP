@@ -42,4 +42,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
         @Param("startOfDay") LocalDateTime startOfDay,
         @Param("endOfDay") LocalDateTime endOfDay
     );
+
+    // Lấy danh sách đơn hàng theo khách hàng
+    List<Order> findByCustomer(com.nguyendat.shopee_be.auth.entities.User customer);
 }

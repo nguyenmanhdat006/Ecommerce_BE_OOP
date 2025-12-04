@@ -13,6 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletRequest;
+import com.nguyendat.shopee_be.auth.config.JWTTokenHelper;
+import com.nguyendat.shopee_be.auth.repositories.UserDetailRepository;
+import com.nguyendat.shopee_be.auth.entities.User;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +29,12 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
+    @Autowired
+    private JWTTokenHelper jwtTokenHelper;
+
+    @Autowired
+    private UserDetailRepository userRepository;
+
     @GetMapping
     @Operation(summary = "Get all orders")
     public ResponseEntity<List<Order>> getAll() {
@@ -35,6 +45,28 @@ public class OrderController {
     @Operation(summary = "Get order by id")
     public ResponseEntity<Order> getById(@PathVariable UUID id) {
         return new ResponseEntity<>(orderService.findById(id), HttpStatus.OK);
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "Get orders for current authenticated user (use access token)")
+    public ResponseEntity<List<Order>> getCurrentUserOrders(HttpServletRequest request) {
+        String token = jwtTokenHelper.getToken(request);
+        if (token == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        String username = jwtTokenHelper.getUserNameFromToken(token);
+        if (username == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        User user = userRepository.findByEmail(username);
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        List<Order> orders = orderService.findByUser(user);
+        return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 
     @PostMapping
