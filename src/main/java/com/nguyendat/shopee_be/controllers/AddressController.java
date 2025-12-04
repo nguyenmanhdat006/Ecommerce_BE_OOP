@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import com.nguyendat.shopee_be.auth.repositories.UserDetailRepository;
+import java.util.Optional;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -27,6 +29,9 @@ public class AddressController {
 
     @Autowired
     private UserDetailsService userDetailsService;
+
+    @Autowired
+    private UserDetailRepository userDetailRepository;
 
     @GetMapping
     @Operation(summary = "Get all addresses")
@@ -86,6 +91,17 @@ public class AddressController {
         
         addressService.deleteById(id);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "Get addresses by user id", description = "Returns all addresses belonging to the given user id")
+    public ResponseEntity<List<AddressResponse>> getByUserId(@PathVariable UUID userId) {
+        Optional<User> userOpt = userDetailRepository.findById(userId);
+        if (!userOpt.isPresent()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        List<AddressResponse> addresses = addressService.findByUserAsDto(userOpt.get());
+        return new ResponseEntity<>(addresses, HttpStatus.OK);
     }
 
     private User getCurrentUser(Principal principal) {

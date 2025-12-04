@@ -19,4 +19,5 @@ public class UserDto {
     private String email;
     private String phoneNumber;
     private Boolean enabled;
+    private String role;
 }

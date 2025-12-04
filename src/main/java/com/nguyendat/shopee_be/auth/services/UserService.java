@@ -26,15 +26,23 @@ public class UserService {
     private UserDto toDto(User u) {
         if (u == null)
             return null;
-        return UserDto.builder()
-                .id(u.getId())
-                .firstName(u.getFirstName())
-                .lastName(u.getLastName())
-                .email(u.getEmail())
-                .avatar(u.getAvatar())
-                .phoneNumber(u.getPhoneNumber())
-                .enabled(u.isEnabled())
-                .build();
+    String role = null;
+    if (u.getAuthorities() != null && !u.getAuthorities().isEmpty()) {
+        role = u.getAuthorities().stream()
+            .findFirst()
+            .map(auth -> auth.getAuthority())
+            .orElse(null);
+    }
+    return UserDto.builder()
+        .id(u.getId())
+        .firstName(u.getFirstName())
+        .lastName(u.getLastName())
+        .email(u.getEmail())
+        .avatar(u.getAvatar())
+        .phoneNumber(u.getPhoneNumber())
+        .enabled(u.isEnabled())
+        .role(role)
+        .build();
     }
 
     public List<UserDto> findAll() {
