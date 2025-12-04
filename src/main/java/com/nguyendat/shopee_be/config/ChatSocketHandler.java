@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ChatSocketHandler extends TextWebSocketHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(ChatSocketHandler.class);
-    private static final String ADMIN_ROLE = "ADMIN";
+    private static final String ADMIN_ROLE = "ROLE_ADMIN";
 
     @Autowired
     private MessageRepository messageRepository;
