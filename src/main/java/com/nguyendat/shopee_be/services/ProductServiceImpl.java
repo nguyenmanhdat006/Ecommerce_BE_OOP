@@ -180,4 +180,14 @@ public class ProductServiceImpl implements ProductService{
         });
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "product", key = "#id"),
+        @CacheEvict(value = "productList", allEntries = true)
+    })
+    @Override
+    public void deleteProductById(UUID id) {
+        Product product = productRepository.findById(id).orElseThrow(() -> new ResourceNotFoundEx("Product Not Found!"));
+        productRepository.delete(product);
+    }
+
 }

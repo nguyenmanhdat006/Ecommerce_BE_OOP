@@ -36,4 +36,6 @@ public interface ProductService {
         int page,
         int size
     );
+
+    void deleteProductById(UUID id);
 }
