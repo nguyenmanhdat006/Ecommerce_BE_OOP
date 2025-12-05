@@ -22,6 +22,9 @@ public class DashboardService {
     @Autowired 
     private DashboardSocketHandler socketHandler;
 
+    @Autowired
+    private com.nguyendat.shopee_be.repositories.OrderItemRepository orderItemRepository;
+
     // Đếm số đơn đang xử lý (chưa hoàn thành)
     public int getProcessingOrders() {
         int pending = orderRepository.countByStatus(OrderStatus.PENDING);
@@ -42,6 +45,8 @@ public class DashboardService {
         Map<String, Object> kpi = new HashMap<>();
         kpi.put("processingOrders", getProcessingOrders());
         kpi.put("todayRevenue", getTodayRevenue()); 
+        kpi.put("topProducts", getTopProducts(5));
+        kpi.put("topCustomers", getTopCustomers(5));
         kpi.put("timestamp", System.currentTimeMillis());
         return kpi;
     }
@@ -53,6 +58,8 @@ public class DashboardService {
         Map<String, Object> payload = new HashMap<>();
         payload.put("processingOrders", getProcessingOrders());
         payload.put("todayRevenue", getTodayRevenue());
+        payload.put("topProducts", getTopProducts(5));
+        payload.put("topCustomers", getTopCustomers(5));
         
         socketHandler.sendEvent("KPI_UPDATE", payload);
         log.info("📊 Pushed KPI update");
@@ -143,6 +150,68 @@ public class DashboardService {
         log.info("📈 Pushed HOURLY_REVENUE");
     }
 
+    // Top products (by quantity sold)
+    public List<Map<String, Object>> getTopProducts(int limit) {
+    // Keep concise diagnostic: whether any top-products rows exist (aggregate across order_items)
+    List<Object[]> rows = orderItemRepository.findTopProductsByQuantity();
+    if (rows == null || rows.isEmpty()) {
+        log.debug("TOP_PRODUCTS: no rows returned (aggregated across order_items)");
+    } else {
+        log.debug("TOP_PRODUCTS: returned {} rows (aggregated across order_items)", rows.size());
+    }
+        List<Map<String, Object>> result = new ArrayList<>();
+        int i = 0;
+        if (rows == null) {
+            log.debug("TOP_PRODUCTS rows is null, returning empty list");
+            return result;
+        }
+        for (Object[] row : rows) {
+            if (row == null || row.length < 3) continue;
+            Map<String, Object> m = new HashMap<>();
+            m.put("productId", row[0]);
+            m.put("productName", row[1]);
+            try {
+                if (row[2] instanceof Number) m.put("quantity", ((Number) row[2]).intValue());
+                else m.put("quantity", Integer.parseInt(row[2].toString()));
+            } catch (Exception e) {
+                m.put("quantity", 0);
+            }
+            result.add(m);
+            i++;
+            if (i >= limit) break;
+        }
+        return result;
+    }
+
+    // Top customers (by total spent)
+    public List<Map<String, Object>> getTopCustomers(int limit) {
+    List<Object[]> rows = orderRepository.findTopCustomersByTotal(OrderStatus.PAID);
+    // Log raw rows for debugging whether we have top-customer data
+    log.debug("TOP_CUSTOMERS raw rows count={}, rows={}", rows == null ? 0 : rows.size(), rows);
+        List<Map<String, Object>> result = new ArrayList<>();
+        int i = 0;
+        if (rows == null) {
+            log.debug("TOP_CUSTOMERS rows is null, returning empty list");
+            return result;
+        }
+        for (Object[] row : rows) {
+            if (row == null || row.length < 3) continue;
+            Map<String, Object> m = new HashMap<>();
+            m.put("customerId", row[0]);
+            m.put("email", row[1]);
+            try {
+                if (row[2] instanceof Number) m.put("total", ((Number) row[2]).doubleValue());
+                else m.put("total", Double.parseDouble(row[2].toString()));
+            } catch (Exception e) {
+                m.put("total", 0.0);
+            }
+            result.add(m);
+            i++;
+            if (i >= limit) break;
+        }
+        return result;
+    }
+
      //Push order status distribution (cho bar chart - đơn hôm nay)
     public void pushOrderStatusDistribution() {
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
@@ -175,6 +244,14 @@ public class DashboardService {
             pushRevenueUpdate();
             pushHourlyRevenue();
             pushOrderStatusDistribution();
+            // push top lists
+            List<Map<String, Object>> topProducts = getTopProducts(5);
+            List<Map<String, Object>> topCustomers = getTopCustomers(5);
+            // Log presence of top lists before sending
+            log.debug("TOP_PRODUCTS prepared size={}", topProducts == null ? 0 : topProducts.size());
+            log.debug("TOP_CUSTOMERS prepared size={}", topCustomers == null ? 0 : topCustomers.size());
+            socketHandler.sendEvent("TOP_PRODUCTS", topProducts);
+            socketHandler.sendEvent("TOP_CUSTOMERS", topCustomers);
 
             log.info("📡 Dashboard data pushed to {} clients", clients);
 
