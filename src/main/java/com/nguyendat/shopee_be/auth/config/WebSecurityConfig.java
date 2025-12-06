@@ -67,6 +67,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/dashboard/kpi").permitAll()
                         .requestMatchers("/api/health").permitAll()
+                        .requestMatchers("/api/reviews/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(user -> user.userService(oAuth2Service))
