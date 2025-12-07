@@ -19,4 +19,6 @@ public class OrderItemResponse {
     private BigDecimal totalPrice;
     private UUID productId;
     private UUID productVariantId;
+    // Name of the product for this order item (convenience for clients)
+    private String productName;
 }
