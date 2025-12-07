@@ -37,10 +37,7 @@ public class ReviewService {
             throw new RuntimeException("Bạn không có quyền đánh giá sản phẩm này!");
         }
 
-        // 3. Kiểm tra user đã đánh giá orderItem này chưa
-        if (reviewRepository.existsByUserIdAndOrderItemId(userId, request.getOrderItemId())) {
-            throw new RuntimeException("Bạn đã đánh giá sản phẩm này rồi!");
-        }
+    // 3. (Removed) Allow multiple reviews per order item by the same user
 
         // 4. Lấy thông tin user + product
         User user = userDetailRepository.findById(userId)
@@ -126,9 +123,6 @@ public class ReviewService {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new RuntimeException("Review not found"));
 
-        if (!review.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Bạn không có quyền cập nhật đánh giá này!");
-        }
 
         // Only update rating/comment
         review.setRating(request.getRating());

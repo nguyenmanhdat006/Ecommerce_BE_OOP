@@ -90,6 +90,7 @@ public class OrderController {
                 .notes(order.getNotes())
                 .customerId(order.getCustomer() != null ? order.getCustomer().getId() : null)
                 .orderItems(order.getOrderItems() != null ? order.getOrderItems().stream().map(this::toOrderItemResponse).collect(Collectors.toList()) : null)
+                .customerName(getFullName(order.getCustomer()))
                 .build();
 
         return resp;
@@ -106,7 +107,17 @@ public class OrderController {
                 .totalPrice(item.getTotalPrice())
                 .productId(productId)
                 .productVariantId(item.getProductVariant() != null ? item.getProductVariant().getId() : null)
+                .productName(item.getProduct() != null ? item.getProduct().getName() : null)
                 .build();
+    }
+
+    // Helper to build full name from User entity (handles nulls)
+    private String getFullName(User user) {
+        if (user == null) return null;
+        String first = user.getFirstName() != null ? user.getFirstName() : "";
+        String last = user.getLastName() != null ? user.getLastName() : "";
+        String full = (first + " " + last).trim();
+        return full.isEmpty() ? null : full;
     }
 
     @PostMapping
