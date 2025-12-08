@@ -21,4 +21,6 @@ public class OrderItemResponse {
     private UUID productVariantId;
     // Name of the product for this order item (convenience for clients)
     private String productName;
+    // Indicate whether the order item has been reviewed by the customer
+    private Boolean isReviewed;
 }

@@ -350,6 +350,12 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.findByCustomer(user);
     }
 
+    @Override
+    public List<OrderItem> findUnreviewedOrderItemsByUser(com.nguyendat.shopee_be.auth.entities.User user) {
+        if (user == null || user.getId() == null) return java.util.Collections.emptyList();
+        return orderItemRepository.findUnreviewedByCustomerId(user.getId());
+    }
+
     private boolean isValidTransition(OrderStatus current, OrderStatus next) {
         return switch (current) {
             case PENDING -> List.of(OrderStatus.SHIPPING, OrderStatus.CANCELED).contains(next);

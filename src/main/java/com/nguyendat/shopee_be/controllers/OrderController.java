@@ -77,6 +77,29 @@ public class OrderController {
     return new ResponseEntity<>(responses, HttpStatus.OK);
     }
 
+    @GetMapping("/unreviewed")
+    @Operation(summary = "Get order items that haven't been reviewed by current user")
+    public ResponseEntity<List<OrderItemResponse>> getUnreviewedOrderItems(HttpServletRequest request) {
+        String token = jwtTokenHelper.getToken(request);
+        if (token == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        String username = jwtTokenHelper.getUserNameFromToken(token);
+        if (username == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        User user = userRepository.findByEmail(username);
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        List<OrderItem> items = orderService.findUnreviewedOrderItemsByUser(user);
+        List<OrderItemResponse> responses = items.stream().map(this::toOrderItemResponse).collect(Collectors.toList());
+        return new ResponseEntity<>(responses, HttpStatus.OK);
+    }
+
     // --- Mapping helpers -------------------------------------------------
     private OrderResponse toOrderResponse(Order order) {
         OrderResponse resp = OrderResponse.builder()
@@ -108,6 +131,7 @@ public class OrderController {
                 .productId(productId)
                 .productVariantId(item.getProductVariant() != null ? item.getProductVariant().getId() : null)
                 .productName(item.getProduct() != null ? item.getProduct().getName() : null)
+                .isReviewed(item.getIsReviewed() != null ? item.getIsReviewed() : false)
                 .build();
     }
 

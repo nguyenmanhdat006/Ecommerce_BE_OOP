@@ -57,6 +57,10 @@ public class ReviewService {
 
         reviewRepository.save(review);
 
+    // 7. Đánh dấu order item đã được review
+    orderItem.setIsReviewed(true);
+    orderItemRepository.save(orderItem);
+
         // 6. Cập nhật điểm rating trung bình của product
         updateProductRating(product.getId());
 

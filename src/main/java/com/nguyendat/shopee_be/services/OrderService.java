@@ -38,4 +38,7 @@ public interface OrderService {
 
     // Lấy đơn hàng theo user (dùng khi client truyền access token)
     java.util.List<Order> findByUser(com.nguyendat.shopee_be.auth.entities.User user);
+
+    // Lấy các order item chưa được review cho user (customer)
+    java.util.List<com.nguyendat.shopee_be.entities.OrderItem> findUnreviewedOrderItemsByUser(com.nguyendat.shopee_be.auth.entities.User user);
 }
