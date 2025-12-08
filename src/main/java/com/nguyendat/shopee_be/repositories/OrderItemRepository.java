@@ -27,6 +27,10 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, UUID> {
 
 	// Fetch sample order items for given order status (diagnostic)
 	List<OrderItem> findByOrderStatus(@Param("status") OrderStatus status, Pageable pageable);
+
+	// Find all order items for a given customer where isReviewed = false
+	@Query("SELECT oi FROM OrderItem oi WHERE oi.order.customer.id = :customerId AND (oi.isReviewed = false OR oi.isReviewed IS NULL)")
+	List<OrderItem> findUnreviewedByCustomerId(@Param("customerId") java.util.UUID customerId);
 }
 
 
