@@ -15,7 +15,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 
 import java.math.BigDecimal;
@@ -27,9 +26,6 @@ public class ProductServiceImpl implements ProductService{
 
     @Autowired
     private ProductRepository productRepository;
-
-    @Autowired
-    private CategoryService categoryService;
 
     @Autowired
     private ProductMapper productMapper;
@@ -45,7 +41,6 @@ public class ProductServiceImpl implements ProductService{
     }
 
     @Override
-    @Cacheable(value = "productList", key = "#categoryId + '_' + #typeId")
     public List<ProductDto> getAllProducts(UUID categoryId, UUID typeId) {
 
         Specification<Product> productSpecification= (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
@@ -58,7 +53,16 @@ public class ProductServiceImpl implements ProductService{
         }
 
         List<Product> products = productRepository.findAll(productSpecification);
-        return productMapper.getProductDtos(products);
+        return products.stream().map(product -> {
+            ProductDto dto = productMapper.mapProductToDto(product);
+            dto.setCategoryId(product.getCategory().getId());
+            dto.setCategoryTypeId(product.getCategoryType().getId());
+            dto.setCategoryName(product.getCategory().getName());
+            dto.setCategoryTypeName(product.getCategoryType().getName());
+            dto.setVariants(productMapper.mapProductVariantListToDto(product.getProductVariants()));
+            dto.setProductResources(productMapper.mapProductResourcesListDto(product.getResources()));
+            return dto;
+        }).toList();
     }
 
     @Override
@@ -70,18 +74,21 @@ public class ProductServiceImpl implements ProductService{
         ProductDto productDto = productMapper.mapProductToDto(product);
         productDto.setCategoryId(product.getCategory().getId());
         productDto.setCategoryTypeId(product.getCategoryType().getId());
+        productDto.setCategoryName(product.getCategory().getName());
+        productDto.setCategoryTypeName(product.getCategoryType().getName());
         productDto.setVariants(productMapper.mapProductVariantListToDto(product.getProductVariants()));
         productDto.setProductResources(productMapper.mapProductResourcesListDto(product.getResources()));
         return productDto;
     }
 
     @Override
-    @Cacheable(value = "product", key = "#id")
     public ProductDto getProductById(UUID id) {
         Product product= productRepository.findById(id).orElseThrow(()-> new ResourceNotFoundEx("Product Not Found!"));
         ProductDto productDto = productMapper.mapProductToDto(product);
         productDto.setCategoryId(product.getCategory().getId());
         productDto.setCategoryTypeId(product.getCategoryType().getId());
+        productDto.setCategoryName(product.getCategory().getName());
+        productDto.setCategoryTypeName(product.getCategoryType().getName());
         productDto.setVariants(productMapper.mapProductVariantListToDto(product.getProductVariants()));
         productDto.setProductResources(productMapper.mapProductResourcesListDto(product.getResources()));
         return productDto;
