@@ -4,19 +4,22 @@ import com.nguyendat.shopee_be.dto.ProductDto;
 import com.nguyendat.shopee_be.dto.ProductResourceDto;
 import com.nguyendat.shopee_be.dto.ProductVariantDto;
 import com.nguyendat.shopee_be.entities.*;
-import com.nguyendat.shopee_be.services.CategoryService;
+import com.nguyendat.shopee_be.repositories.CategoryRepository;
+import com.nguyendat.shopee_be.repositories.CategoryTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 // class chuyển đổi dữ liệu 2 chiều dto->entity(client->server) , ngược lại
 @Component
 public class ProductMapper {
 
     @Autowired
-    private CategoryService categoryService;
+    private CategoryRepository categoryRepository;
+
+    @Autowired
+    private CategoryTypeRepository categoryTypeRepository;
 
     public Product mapToProductEntity(ProductDto productDto){
         Product product = new Product();
@@ -31,12 +34,15 @@ public class ProductMapper {
         product.setRating(productDto.getRating());
         product.setSlug(productDto.getSlug());
 
-        Category category = categoryService.getCategory(productDto.getCategoryId());
-        if(null != category){
+        if(productDto.getCategoryId() != null){
+            Category category = categoryRepository.findById(productDto.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found with id: " + productDto.getCategoryId()));
             product.setCategory(category);
-            UUID categoryTypeId = productDto.getCategoryTypeId();
+        }
 
-            CategoryType categoryType = category.getCategoryTypes().stream().filter(categoryType1 -> categoryType1.getId().equals(categoryTypeId)).findFirst().orElse(null);
+        if(productDto.getCategoryTypeId() != null){
+            CategoryType categoryType = categoryTypeRepository.findById(productDto.getCategoryTypeId())
+                    .orElseThrow(() -> new RuntimeException("CategoryType not found with id: " + productDto.getCategoryTypeId()));
             product.setCategoryType(categoryType);
         }
 
@@ -106,7 +112,14 @@ public class ProductMapper {
 
     //lấy product thumbnail từ Resources
     private String getProductThumbnail(List<Resources> resources) {
-        return resources.stream().filter(Resources::getIsPrimary).findFirst().orElse(null).getUrl();
+        if(resources == null || resources.isEmpty()) {
+            return null;
+        }
+        return resources.stream()
+                .filter(Resources::getIsPrimary)
+                .findFirst()
+                .map(Resources::getUrl)
+                .orElse(null);
     }
 
     public List<ProductVariantDto> mapProductVariantListToDto(List<ProductVariant> productVariants) {

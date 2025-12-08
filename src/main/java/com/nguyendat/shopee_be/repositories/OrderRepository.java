@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface OrderRepository extends JpaRepository<Order, UUID> {
@@ -45,4 +46,15 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     // Lấy danh sách đơn hàng theo khách hàng
     List<Order> findByCustomer(com.nguyendat.shopee_be.auth.entities.User customer);
+
+    // Top customers by total spent (only PAID orders). Returns: customer id, customer email, total spent
+    @Query("SELECT o.customer.id, o.customer.email, COALESCE(SUM(o.totalAmount),0) " +
+        "FROM Order o " +
+        "WHERE o.status = :status " +
+        "GROUP BY o.customer.id, o.customer.email " +
+        "ORDER BY SUM(o.totalAmount) DESC")
+    List<Object[]> findTopCustomersByTotal(@Param("status") OrderStatus status);
+
+    // Find the most recent order with given status (used for diagnostics/logging)
+    Optional<Order> findTopByStatusOrderByOrderDateDesc(OrderStatus status);
 }

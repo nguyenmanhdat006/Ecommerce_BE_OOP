@@ -44,4 +44,7 @@ public class OrderItem {
     @JoinColumn(name = "product_variant_id", nullable = false)
     @JsonIgnore
     private ProductVariant productVariant;
+
+    @Column(name = "is_reviewed")
+    private Boolean isReviewed = false;
 }

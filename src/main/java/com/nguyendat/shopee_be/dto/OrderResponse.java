@@ -25,4 +25,6 @@ public class OrderResponse {
     private String notes;
     private UUID customerId;
     private List<OrderItemResponse> orderItems;
+    // Full name of the customer who placed the order (computed from User.firstName/lastName)
+    private String customerName;
 }

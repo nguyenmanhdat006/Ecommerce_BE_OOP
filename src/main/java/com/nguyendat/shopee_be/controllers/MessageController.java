@@ -17,6 +17,9 @@ import java.util.List;
 import java.util.UUID;
 
 import com.nguyendat.shopee_be.auth.entities.User;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 @RestController
 @RequestMapping("/api/messages")
@@ -102,7 +105,29 @@ public class MessageController {
         if (principal == null) {
             throw new RuntimeException("User not authenticated");
         }
-        return (User) userDetailsService.loadUserByUsername(principal.getName());
+        
+        String email = null;
+        
+        // Lấy authentication từ SecurityContext
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication != null && authentication.getPrincipal() instanceof OAuth2User) {
+            // Nếu là OAuth2User, lấy email từ attributes
+            OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+            email = oAuth2User.getAttribute("email");
+        } else if (authentication != null && authentication.getPrincipal() instanceof User) {
+            // Nếu đã là User entity (từ JWT), dùng trực tiếp
+            return (User) authentication.getPrincipal();
+        } else {
+            // Fallback: dùng principal.getName() (sẽ là email từ JWT)
+            email = principal.getName();
+        }
+        
+        if (email == null || email.isEmpty()) {
+            throw new RuntimeException("Unable to get user email from authentication");
+        }
+        
+        return (User) userDetailsService.loadUserByUsername(email);
     }
 }
 
